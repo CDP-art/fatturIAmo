@@ -81,10 +81,11 @@ export default function PromptInput() {
             </button>
 
 
-            <pre className="mt-8 p-4 border border-purple-300 bg-purple-50 rounded-xl text-gray-800 whitespace-pre-wrap transition-all duration-300">
-                {JSON.stringify(output, null, 2)}
-            </pre>
-
+            {output && (
+                <pre className="mt-8 p-4 border border-purple-300 bg-purple-50 rounded-xl text-gray-800 whitespace-pre-wrap transition-all duration-300">
+                    {JSON.stringify(output, null, 2)}
+                </pre>
+            )}
 
 
             {showButtons && (
