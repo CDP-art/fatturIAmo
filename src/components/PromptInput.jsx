@@ -2,6 +2,10 @@ import React from "react";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import OutputButtons from "./OutputButtons";
+import FatturaIA from "./FatturaIA";
+import { generaPrompt } from "../utils/promptBuilder";
+
+
 
 export default function PromptInput() {
     const [prompt, setPrompt] = useState("");
@@ -40,7 +44,10 @@ export default function PromptInput() {
         setIsLoading(true);
         setOutput("");
         setShowButtons(false);
-        await fetchFattura(prompt);
+        const promptFinale = generaPrompt(prompt);
+        console.log("Prompt inviato:", promptFinale);
+        await fetchFattura(promptFinale);
+
     };
 
     useEffect(() => {
@@ -81,12 +88,7 @@ export default function PromptInput() {
             </button>
 
 
-            {output && (
-                <pre className="mt-8 p-4 border border-purple-300 bg-purple-50 rounded-xl text-gray-800 whitespace-pre-wrap transition-all duration-300">
-                    {JSON.stringify(output, null, 2)}
-                </pre>
-            )}
-
+            {output && <FatturaIA rawOutput={output} />}
 
             {showButtons && (
                 <OutputButtons onEdit={handleEdit} onReset={handleReset} />
