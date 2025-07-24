@@ -1,3 +1,4 @@
+// FatturaIA.jsx
 import React from "react";
 
 export default function FatturaIA({ rawOutput }) {
@@ -13,7 +14,6 @@ export default function FatturaIA({ rawOutput }) {
         );
     }
 
-    // Estrai i campi corretti dal JSON
     const {
         numeroFattura,
         data,
@@ -24,7 +24,7 @@ export default function FatturaIA({ rawOutput }) {
         iva,
         totale,
     } = parsed;
-
+    console.log("Parsed FatturaIA:", parsed);
 
     return (
         <div className="mt-8 p-6 border border-purple-300 bg-white rounded-xl shadow text-gray-800">
@@ -32,48 +32,55 @@ export default function FatturaIA({ rawOutput }) {
                 Fattura n. {numeroFattura || "-"} del {data || "-"}
             </h2>
 
-            <div className="mb-4">
-                <p><strong>Cliente:</strong> {cliente?.nome || "Nome mancante"} - P.IVA {cliente?.piva || "-"}</p>
-                {fornitore && (
-                    <p><strong>Fornitore:</strong> {fornitore.nome || "-"} - P.IVA {fornitore.piva || "-"}</p>
-                )}
+            <div className="mb-6 text-sm space-y-3">
+                <div>
+                    <h4 className="text-gray-500 font-semibold uppercase text-xs">Cliente</h4>
+                    <p>
+                        <strong>{cliente?.nome || "—"}</strong>{cliente?.piva && ` - P.IVA ${cliente.piva}`}
+                    </p>
+                    {cliente?.indirizzo && <p className="text-gray-600">{cliente.indirizzo}</p>}
+                </div>
+
+                <div>
+                    <h4 className="text-gray-500 font-semibold uppercase text-xs">Fornitore</h4>
+                    <p>
+                        <strong>{fornitore?.nome || "—"}</strong>{fornitore?.piva && ` - P.IVA ${fornitore.piva}`}
+                    </p>
+                    {fornitore?.indirizzo && <p className="text-gray-600">{fornitore.indirizzo}</p>}
+                </div>
             </div>
 
-            <table className="w-full border border-gray-300 mb-4 text-sm">
+
+
+            <table className="w-full text-sm border border-gray-200">
                 <thead className="bg-gray-100">
                     <tr>
-                        <th className="p-2 border">Descrizione</th>
-                        <th className="p-2 border">Quantità</th>
-                        <th className="p-2 border">Prezzo (€)</th>
+                        <th className="text-left p-2 border-b">Descrizione</th>
+                        <th className="text-right p-2 border-b">Quantità</th>
+                        <th className="text-right p-2 border-b">Prezzo (€)</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {prodotti && prodotti.length > 0 ? (
-                        prodotti.map((item, index) => (
-                            <tr key={index}>
-                                <td className="p-2 border">{item.descrizione || "-"}</td>
-                                <td className="p-2 border text-center">{item.quantità || 1}</td>
-                                <td className="p-2 border text-right">
-                                    {item.prezzo != null ? item.prezzo.toFixed(2) : "-"}
-                                </td>
-                            </tr>
-                        ))
-                    ) : (
-                        <tr>
-                            <td className="p-2 border text-center" colSpan="3">
-                                Nessun prodotto o servizio inserito.
-                            </td>
+                    {prodotti.map((item, index) => (
+                        <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                            <td className="p-2">{item.descrizione}</td>
+                            <td className="p-2 text-right">{item.quantita}</td>
+                            <td className="p-2 text-right">{item.prezzo.toFixed(2)}</td>
                         </tr>
-                    )}
+                    ))}
                 </tbody>
             </table>
 
-            <div className="text-right text-sm text-gray-600 mb-2">
-                Imponibile: {imponibile || "-"} € – IVA: {iva || "-"} €
-            </div>
+            <hr className="mt-10 mb-4 border-t border-gray-200" />
 
-            <div className="text-right font-semibold text-lg">
-                Totale: {totale != null ? `${totale.toFixed(2)} €` : "-"}
+            <div className="text-sm text-right text-gray-600">
+                Imponibile: {imponibile?.toFixed(2) || "-"} € - IVA: {iva?.toFixed(2) || "-"} €
+            </div>
+            <div className="text-right text-lg font-bold text-purple-700 mt-2">
+                Totale: {totale.toFixed(2)} €
+            </div>
+            <div className="mt-6 text-xs text-gray-500">
+                Generato automaticamente da Fattur<span className="text-purple-600">IA</span>mo
             </div>
         </div>
     );

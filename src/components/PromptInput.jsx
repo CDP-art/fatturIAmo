@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import OutputButtons from "./OutputButtons";
 import FatturaIA from "./FatturaIA";
-import { generaPrompt } from "../utils/promptBuilder";
+//import { generaPrompt } from "../utils/promptBuilder";
 
 
 
@@ -44,10 +44,7 @@ export default function PromptInput() {
         setIsLoading(true);
         setOutput("");
         setShowButtons(false);
-        const promptFinale = generaPrompt(prompt);
-        console.log("Prompt inviato:", promptFinale);
-        await fetchFattura(promptFinale);
-
+        await fetchFattura(prompt);
     };
 
     useEffect(() => {
@@ -87,6 +84,10 @@ export default function PromptInput() {
                 {isLoading ? "Generazione in corso..." : "Genera fattura"}
             </button>
 
+
+            {/* {output && (
+                <pre>{JSON.stringify(output, null, 2)}</pre>
+            )} */}
 
             {output && <FatturaIA rawOutput={output} />}
 
