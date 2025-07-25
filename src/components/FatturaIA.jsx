@@ -79,7 +79,10 @@ export default function FatturaIA({ rawOutput }) {
             <div className="text-right text-lg font-bold text-purple-700 mt-2">
                 Totale: {totale.toFixed(2)} €
             </div>
-            <div className="mt-6 text-xs text-gray-500">
+            <div className="mt-6 text-xs text-gray-800">
+                *Nella pagina successiva potrai modificare i dettagli della fattura, se necessario.
+            </div>
+            <div className="mt-2 text-xs text-gray-500">
                 Generato automaticamente da Fattur<span className="text-purple-600">IA</span>mo
             </div>
         </div>

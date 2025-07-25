@@ -3,11 +3,19 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import OutputButtons from "./OutputButtons";
 import FatturaIA from "./FatturaIA";
+import { useNavigate } from "react-router-dom";
 //import { generaPrompt } from "../utils/promptBuilder";
 
 
 
 export default function PromptInput() {
+
+    const navigate = useNavigate();
+    const handleEdit = () => {
+        navigate("/modifica", { state: { invoice: output } });
+    };
+
+
     const [prompt, setPrompt] = useState("");
     const [output, setOutput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -61,10 +69,6 @@ export default function PromptInput() {
         setShowButtons(false);
     };
 
-    const handleEdit = () => {
-        alert("Funzione di modifica avanzata in arrivo!");
-    };
-
     return (
         <React.Fragment>
             <textarea
@@ -92,7 +96,10 @@ export default function PromptInput() {
             {output && <FatturaIA rawOutput={output} />}
 
             {showButtons && (
-                <OutputButtons onEdit={handleEdit} onReset={handleReset} />
+                <OutputButtons
+                    onEdit={handleEdit}
+                    onReset={handleReset}
+                    invoice={output} />
             )}
         </React.Fragment>
     );

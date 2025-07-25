@@ -1,7 +1,15 @@
 import { motion } from 'framer-motion';
 import { FaEdit, FaTrash, FaLongArrowAltRight } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 
-export default function OutputButtons({ onEdit, onReset }) {
+export default function OutputButtons({ onReset, onEdit }) {
+
+    const navigate = useNavigate();
+
+    const handleEdit = () => {
+        navigate('/modifica', { state: { invoice: output } });
+    }
+
     const buttons = [
         {
             icon: <FaTrash />,
@@ -12,7 +20,7 @@ export default function OutputButtons({ onEdit, onReset }) {
         {
             icon: <FaEdit />,
             text: "Modifica",
-            action: onEdit,
+            action: onEdit
         },
         {
             icon: <FaLongArrowAltRight />,
