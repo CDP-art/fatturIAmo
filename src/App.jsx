@@ -3,6 +3,7 @@ import Home from './pages/home';
 import Demo from './pages/demo';
 import Genera from './pages/genera';
 import ModificaFattura from './pages/modificaFattura';
+import Accesso from './pages/login';
 
 function App() {
     return (
@@ -12,6 +13,7 @@ function App() {
                 <Route path="/demo" element={<Demo />} />
                 <Route path="/genera" element={<Genera />} />
                 <Route path="/modifica" element={<ModificaFattura />} />
+                <Route path="/accesso" element={<Accesso />} />
             </Routes>
         </Router>
     );

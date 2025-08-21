@@ -30,7 +30,7 @@ export default function Demo() {
     const navigate = useNavigate();
 
     const handleNext = () => {
-        navigate("/genera");
+        navigate("/accesso");
     };
 
     return (
