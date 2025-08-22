@@ -1,31 +1,19 @@
 import { motion } from 'framer-motion';
-import { FaEdit, FaTrash, FaLongArrowAltRight } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
+import { FaEdit, FaTrash } from 'react-icons/fa';
 
 export default function OutputButtons({ onReset, onEdit }) {
-
-    const navigate = useNavigate();
-
-    const handleEdit = () => {
-        navigate('/modifica', { state: { invoice: output } });
-    }
-
     const buttons = [
         {
             icon: <FaTrash />,
-            text: "Svuota",
+            text: "Svuota tutto",
             action: onReset,
             danger: true,
         },
         {
             icon: <FaEdit />,
-            text: "Modifica",
-            action: onEdit
-        },
-        {
-            icon: <FaLongArrowAltRight />,
-            text: "Avanti",
-            action: () => alert("URL Successivo"),
+            text: "Rivedi e Modifica",
+            action: onEdit,
+            primary: true,
         },
     ];
 
@@ -34,7 +22,7 @@ export default function OutputButtons({ onReset, onEdit }) {
         visible: {
             opacity: 1,
             transition: {
-                staggerChildren: 0.25, // Delay tra i bottoni
+                staggerChildren: 0.25,
             },
         },
     };
@@ -45,12 +33,11 @@ export default function OutputButtons({ onReset, onEdit }) {
             opacity: 1,
             scale: 1,
             transition: {
-                duration: 2,
-                ease: [0.16, 1, 0.3, 1]  // ease-out-back
+                duration: 0.4,
+                ease: [0.16, 1, 0.3, 1],
             },
         },
     };
-
 
     return (
         <motion.div
@@ -64,17 +51,21 @@ export default function OutputButtons({ onReset, onEdit }) {
                     key={i}
                     onClick={btn.action}
                     variants={buttonVariants}
-                    //initial="hidden"
-                    //animate="visible"
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition ${btn.danger
-                        ? "border-gray-300 hover:bg-red-100 text-red-600"
-                        : "border-gray-300 hover:bg-gray-100"
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    transition={{ duration: 0.2, ease: "easeOut" }}
+                    className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold shadow-md
+    ${btn.danger
+                            ? "text-red-500 border border-red-300 hover:bg-red-100"
+                            : btn.primary
+                                ? "bg-purple-600 text-white hover:bg-purple-700"
+                                : "border border-gray-300 hover:bg-gray-100"
                         }`}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
                 >
-                    {btn.icon} {btn.text}
+                    {btn.icon}
+                    {btn.text}
                 </motion.button>
+
             ))}
         </motion.div>
     );

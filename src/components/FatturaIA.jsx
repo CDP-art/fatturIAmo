@@ -1,6 +1,4 @@
 // FatturaIA.jsx
-import React from "react";
-
 export default function FatturaIA({ rawOutput }) {
     let parsed;
 
@@ -55,9 +53,10 @@ export default function FatturaIA({ rawOutput }) {
             <table className="w-full text-sm border border-gray-200">
                 <thead className="bg-gray-100">
                     <tr>
-                        <th className="text-left p-2 border-b">Descrizione</th>
-                        <th className="text-right p-2 border-b">Quantità</th>
-                        <th className="text-right p-2 border-b">Prezzo (€)</th>
+                        <th className="text-left p-1 border-b">Descrizione</th>
+                        <th className="text-right p-1 border-b">Quantità</th>
+                        <th className="text-right p-1 border-b">Prezzo&nbsp;(€)</th>
+                        <th className="text-right p-1 border-b">Totale&nbsp;(€)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -66,6 +65,7 @@ export default function FatturaIA({ rawOutput }) {
                             <td className="p-2">{item.descrizione}</td>
                             <td className="p-2 text-right">{item.quantita}</td>
                             <td className="p-2 text-right">{item.prezzo.toFixed(2)}</td>
+                            <td className="p-2 text-right bg-purple-100 font-medium whitespace-nowrap">{(item.quantita * item.prezzo).toFixed(2)}</td>
                         </tr>
                     ))}
                 </tbody>
