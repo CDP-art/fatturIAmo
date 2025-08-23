@@ -1,1 +1,18 @@
+# node
 node_modules/
+.vite/
+dist/
+.env
+
+# IDE/editor
+.vscode/
+.idea/
+
+# log
+*.log
+
+# Mac
+.DS_Store
+
+# OS
+Thumbs.db
