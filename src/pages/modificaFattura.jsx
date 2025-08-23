@@ -2,9 +2,7 @@ import React from "react";
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
-
 export default function ModificaFattura() {
-
     const navigate = useNavigate();
     const location = useLocation();
     const invoiceData = location.state?.invoice;
@@ -12,6 +10,33 @@ export default function ModificaFattura() {
     if (!invoiceData) {
         navigate("/genera");
         return null;
+    }
+
+    function handleExportFattura() {
+
+        if (!numeroFattura || !data || prodotti.length === 0) {
+            alert("Compila tutti i campi prima di proseguire");
+            return;
+        }
+
+        navigate("/esporta", {
+            state: {
+                invoice: {
+                    numeroFattura,
+                    data,
+                    cliente: {
+                        nome: clienteNome,
+                        piva: clientePiva,
+                        indirizzo: clienteIndirizzo,
+                    },
+                    prodotti,
+                    imponibile: Number(imponibile.toFixed(2)),
+                    iva: Number(iva.toFixed(2)),
+                    totale: Number(totale),
+                },
+            },
+            replace: true,
+        })
     }
 
     const [numeroFattura, setNumeroFattura] = useState(invoiceData.numeroFattura);
@@ -22,31 +47,16 @@ export default function ModificaFattura() {
     const [prodotti, setProdotti] = useState(invoiceData.prodotti || []);
     const [aliquotaIva, setAliquotaIva] = useState(22);
 
-
-
-    // creiamo una funzione che prende in entrata
-    // i come come indice del prodotto,
-    // campo come campo da modificare
-    // e valore che è il nuovo valore da impostare
     function updateProdotto(i, campo, valore) {
-
-        // creiamo una copia dell'array dei prodotti
-        // e aggiorniamo il campo specificato
-        // con il nuovo valore
         const newProdotti = [...prodotti];
-
-        // se il campo è "quantita" o "prezzo", convertiamo il valore in numero
-        // altrimenti lo impostiamo direttamente
-        if (campo === "ore" || campo === "prezzo") {
+        if (campo === "ore" || campo === "prezzo" || campo === "quantita") {
             newProdotti[i][campo] = Number(valore);
         } else {
             newProdotti[i][campo] = valore;
         }
-        // aggiorniamo lo stato dei prodotti
         setProdotti(newProdotti);
     }
 
-    //Mostriamo il totale con IVA
     const imponibile = prodotti.reduce((acc, item) => {
         const subtot = Number(item.quantita) * Number(item.prezzo);
         return acc + (isNaN(subtot) ? 0 : subtot);
@@ -55,50 +65,37 @@ export default function ModificaFattura() {
     const iva = (imponibile * aliquotaIva) / 100;
     const totale = (imponibile + iva).toFixed(2);
 
-
-    //Aggiungiamo un prodotto vuoto
     function aggiungiProdotto() {
-        setProdotti([...prodotti,
-        {
-            descrizione: "",
-            quantita: 1,
-            prezzo: 0
-        }
-        ])
+        setProdotti([
+            ...prodotti,
+            {
+                descrizione: "",
+                quantita: 1,
+                prezzo: 0,
+            },
+        ]);
     }
 
-    //Eliminiamo un prodotto
     function eliminaProdotto(prodottoDaEliminare) {
-        const nuoviProdotti = [];
-
-        for (let i = 0; i < prodotti.length; i++) {
-            if (i !== prodottoDaEliminare) {
-                nuoviProdotti.push(prodotti[i]);
-            }
-        }
+        const nuoviProdotti = prodotti.filter((_, i) => i !== prodottoDaEliminare);
         setProdotti(nuoviProdotti);
     }
-
 
     return (
         <React.Fragment>
             <div className="relative min-h-screen bg-gradient-to-br from-blue-300 via-white to-purple-400 px-4 py-10 flex flex-col items-center justify-center">
-
-                {/* Overlay scuro sull’intera pagina */}
                 <div className="absolute inset-0 bg-black/30 z-0" />
 
-                {/* Card con fattura */}
-                <div className="relative z-10 w-full max-w-2xl bg-white rounded-2xl shadow-2xl ring-1 ring-gray-200 p-8 text-gray-800">
-                    <h2 className="text-3xl font-bold text-center mb-8">Modifica la tua fattura</h2>
+                <div className="relative z-10 w-full max-w-2xl bg-white rounded-2xl shadow-2xl ring-1 ring-gray-200 p-4 sm:p-8 text-gray-800">
+                    <h2 className="text-2xl sm:text-3xl font-bold text-center mb-6 sm:mb-8">Modifica la tua fattura</h2>
 
-                    {/* Sezione fattura */}
-                    <div className="flex flex-col sm:flex-row gap-6 mb-6">
+                    <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 mb-6">
                         <div className="flex-1">
                             <label className="block text-sm font-medium mb-1">Numero Fattura</label>
                             <input
                                 type="text"
                                 value={numeroFattura}
-                                onChange={e => setNumeroFattura(e.target.value)}
+                                onChange={(e) => setNumeroFattura(e.target.value)}
                                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400"
                             />
                         </div>
@@ -107,21 +104,20 @@ export default function ModificaFattura() {
                             <input
                                 type="text"
                                 value={data}
-                                onChange={e => setData(e.target.value)}
+                                onChange={(e) => setData(e.target.value)}
                                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400"
                             />
                         </div>
                     </div>
 
-                    {/* Cliente */}
                     <h3 className="text-xl font-semibold mb-4">Cliente</h3>
-                    <div className="grid sm:grid-cols-2 gap-6 mb-6">
+                    <div className="grid sm:grid-cols-2 gap-4 sm:gap-6 mb-6">
                         <div>
                             <label className="block text-sm font-medium mb-1">Nome e Cognome</label>
                             <input
                                 type="text"
                                 value={clienteNome}
-                                onChange={e => setClienteNome(e.target.value)}
+                                onChange={(e) => setClienteNome(e.target.value)}
                                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400"
                             />
                         </div>
@@ -130,7 +126,7 @@ export default function ModificaFattura() {
                             <input
                                 type="text"
                                 value={clientePiva}
-                                onChange={e => setClientePiva(e.target.value)}
+                                onChange={(e) => setClientePiva(e.target.value)}
                                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400"
                             />
                         </div>
@@ -139,75 +135,76 @@ export default function ModificaFattura() {
                             <input
                                 type="text"
                                 value={clienteIndirizzo}
-                                onChange={e => setClienteIndirizzo(e.target.value)}
+                                onChange={(e) => setClienteIndirizzo(e.target.value)}
                                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400"
                             />
                         </div>
                     </div>
 
-                    {/* Prodotti */}
                     <h3 className="text-xl font-semibold mb-4">Prodotti / Servizi</h3>
-                    <div className="space-y-6 mb-8">
+                    <div className="space-y-4 mb-8">
                         {prodotti.map((item, i) => (
-                            <div key={i} className="flex gap-4 items-center justify-center">
-                                <div key={i} className="p-4 border border-gray-200 rounded-lg bg-white">
-                                    <div className="flex flex-col lg:flex-row gap-4">
-                                        <div className="flex-1">
+                            <div key={i} className="flex gap-2 items-center justify-center">
+                                <div className="p-3 border border-gray-200 rounded-lg bg-white w-full">
+                                    <div className="flex flex-col gap-3">
+                                        <div>
                                             <label className="block text-sm mb-1">Descrizione</label>
-                                            <input
-                                                type="text"
+                                            <textarea
+                                                rows={2}
                                                 value={item.descrizione}
-                                                onChange={e => updateProdotto(i, "descrizione", e.target.value)}
+                                                onChange={(e) => updateProdotto(i, "descrizione", e.target.value)}
                                                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400"
                                             />
                                         </div>
-                                        <div className="w-full sm:w-1/3">
-                                            <label className="block text-sm mb-1">Quantità</label>
-                                            <input
-                                                type="number"
-                                                value={item.quantita}
-                                                onChange={e => updateProdotto(i, "quantita", e.target.value)}
-                                                className="w-full p-2 border border-gray-300 rounded-lg text-right focus:ring-2 focus:ring-blue-400"
-                                            />
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <label className="block text-sm mb-1">Quantità</label>
+                                                <input
+                                                    type="number"
+                                                    value={item.quantita}
+                                                    onChange={(e) => updateProdotto(i, "quantita", e.target.value)}
+                                                    className="w-full p-2 border border-gray-300 rounded-lg text-right focus:ring-2 focus:ring-blue-400"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm mb-1">Prezzo (€)</label>
+                                                <input
+                                                    type="number"
+                                                    step="0.01"
+                                                    value={item.prezzo}
+                                                    onChange={(e) => updateProdotto(i, "prezzo", e.target.value)}
+                                                    className="w-full p-2 border border-gray-300 rounded-lg text-right focus:ring-2 focus:ring-blue-400"
+                                                />
+                                            </div>
                                         </div>
-                                        <div className="w-full sm:w-1/3">
-                                            <label className="block text-sm mb-1">Prezzo (€)</label>
-                                            <input
-                                                type="number"
-                                                step="0.01"
-                                                value={item.prezzo}
-                                                onChange={e => updateProdotto(i, "prezzo", e.target.value)}
-                                                className="w-full p-2 border border-gray-300 rounded-lg text-right focus:ring-2 focus:ring-blue-400"
-                                            />
-                                        </div>
-
                                     </div>
-
                                 </div>
-                                <button
-                                    onClick={() => eliminaProdotto(i)}
-                                    className="h-10 px-3 text-red-500 border border-red-300 rounded-md hover:bg-red-100 transition text-lg"
-                                    aria-label="Rimuovi riga"
-                                >
-                                    &minus;
-                                </button>
-                                <button onClick={aggiungiProdotto}
-                                    className="h-10 px-3 text-purple-600 border border-purple-300 rounded-md hover:bg-purple-100 transition text-lg"
-                                    aria-label="Aggiungi riga">
-                                    +
-                                </button>
-
+                                <div className="flex flex-col gap-2 pt-1">
+                                    <button
+                                        onClick={() => eliminaProdotto(i)}
+                                        className="h-8 w-8 text-red-500 border border-red-300 rounded-full hover:bg-red-100 transition"
+                                        aria-label="Rimuovi riga"
+                                    >
+                                        &minus;
+                                    </button>
+                                    <button
+                                        onClick={aggiungiProdotto}
+                                        className="h-8 w-8 text-purple-600 border border-purple-300 rounded-full hover:bg-purple-100 transition"
+                                        aria-label="Aggiungi riga"
+                                    >
+                                        +
+                                    </button>
+                                </div>
                             </div>
-
                         ))}
-
                     </div>
+
                     <div className="mb-6 flex flex-col items-end">
-                        <label className="block text-sm font-bold mb-1 ">Aliquota IVA</label>
+                        <label className="block text-sm font-bold mb-1">Aliquota IVA</label>
                         <select
                             value={aliquotaIva}
-                            onChange={e => setAliquotaIva(Number(e.target.value))}
-                            className="w-30 px-4 py-1 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-blue-400"
+                            onChange={(e) => setAliquotaIva(Number(e.target.value))}
+                            className="w-32 px-4 py-1 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-blue-400"
                         >
                             <option value={0}>0%</option>
                             <option value={4}>4%</option>
@@ -216,18 +213,15 @@ export default function ModificaFattura() {
                         </select>
                     </div>
 
-
                     <div className="text-right text-xl font-semibold text-purple-600">
                         Totale: € {totale}
                     </div>
                 </div>
 
-                {/* Bottone staccato */}
-                {/* Footer con bottone "Apple-style" */}
                 <footer className="relative z-10 w-full max-w-2xl mt-10 px-4 text-center">
                     <button
-                        //onClick={handleSaveAndContinue}
                         className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl shadow-md transition"
+                        onClick={handleExportFattura}
                     >
                         Salva e Prosegui
                     </button>
@@ -235,5 +229,4 @@ export default function ModificaFattura() {
             </div>
         </React.Fragment>
     );
-
 }

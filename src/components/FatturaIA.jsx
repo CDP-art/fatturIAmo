@@ -27,7 +27,7 @@ export default function FatturaIA({ rawOutput }) {
     return (
         <div className="mt-8 p-6 border border-purple-300 bg-white rounded-xl shadow text-gray-800">
             <h2 className="text-xl font-bold mb-4">
-                Fattura n. {numeroFattura || "-"} del {data || "-"}
+                Fattura n. {numeroFattura || "-"} del {data || "/"}
             </h2>
 
             <div className="mb-6 text-sm space-y-3">

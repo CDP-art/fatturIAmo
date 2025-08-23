@@ -4,6 +4,7 @@ import Demo from './pages/demo';
 import Genera from './pages/genera';
 import ModificaFattura from './pages/modificaFattura';
 import Accesso from './pages/login';
+import EsportaFattura from './pages/esportaFattura';
 
 function App() {
     return (
@@ -14,6 +15,7 @@ function App() {
                 <Route path="/genera" element={<Genera />} />
                 <Route path="/modifica" element={<ModificaFattura />} />
                 <Route path="/accesso" element={<Accesso />} />
+                <Route path="/esporta" element={<EsportaFattura />} />
             </Routes>
         </Router>
     );
