@@ -58,7 +58,7 @@ export default function EsportaFattura() {
         doc.setTextColor(150);
         doc.text("Generato automaticamente da FatturIAmo", 20, 285);
 
-        doc.save("fattura.pdf");
+        doc.save(`fattura n. ${numeroFattura} di ${cliente.nome}.pdf`);
     }
 
     return (

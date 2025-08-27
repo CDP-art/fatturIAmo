@@ -1,68 +1,42 @@
-// server/controllers/generaFattura.js
-import axios from 'axios';
-import { estraiDatiParziali, generaPromptFattura } from '../utils/promptBuilder.js';
+// server/routes/fattura.js
+import axios from "axios";
+import { estraiDatiParziali, generaPromptFattura } from "../utils/promptBuilder.js";
+import { enforceTotals } from "../utils/enforceTotals.js";
 
-// Funzione per pulire la risposta di Gemini (rimuove ```json ... ```)
-function estraiJSON(text) {
-    const cleaned = text
-        .replace(/```json\n?/, '')
-        .replace(/```/, '')
-        .trim();
-    return JSON.parse(cleaned);
-}
-
-async function generaFattura(req, res) {
-    const { prompt } = req.body;
-
-    if (!prompt) {
-        return res.status(400).json({ error: 'Prompt mancante' });
-    }
-
+export async function generaFattura(req, res) {
     try {
-        // 1. Estrai i dati principali dal prompt utente (nome cliente, totale, ecc.)
-        const datiParziali = await estraiDatiParziali(prompt);
+        const { prompt: promptOriginale, supplier } = req.body;
 
-        if (!datiParziali) {
-            throw new Error("Estrazione dati fallita");
-        }
+        const parziali = await estraiDatiParziali(promptOriginale);
+        const prompt = generaPromptFattura(parziali, promptOriginale, supplier);
 
-        // 2. Costruisci il prompt finale strutturato per Gemini
-        const promptFinale = generaPromptFattura(datiParziali, prompt);
-
-        // 3. Invia il prompt finale a Gemini per generare il JSON della fattura
-        const response = await axios.post(
+        const g = await axios.post(
             `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-            {
-                contents: [
-                    {
-                        parts: [{ text: promptFinale }]
-                    }
-                ]
-            },
-            {
-                headers: {
-                    "Content-Type": "application/json"
-                }
-            }
+            { contents: [{ parts: [{ text: prompt }] }] },
+            { headers: { "Content-Type": "application/json" } }
         );
 
-        // resultRaw serve per ottenere il testo della risposta
-        const resultRaw = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        let raw = g.data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+        raw = raw.replace(/```json\n?/gi, "").replace(/```/g, "").trim();
+        const draft = JSON.parse(raw);
 
-        if (!resultRaw) {
-            throw new Error("Risposta Gemini vuota o non valida");
+        //Dobbiamo calcolare il totale richiesto
+        // Se l'IVA è inclusa e l'importo totale è fornito, lo utilizziamo
+        // Altrimenti, rimane null
+
+        //Quindi impostiamo una variabile per il totale richiesto
+        let requestedTotal = null;
+
+
+        if (parziali && parziali.ivaInclusa && parziali.importoTotale != null) {
+            requestedTotal = Number(parziali.importoTotale); // allora requestedTotal = importoTotale 
         }
 
-        // 4. Pulisci la risposta e ottieni l’oggetto JSON finale
-        const result = estraiJSON(resultRaw);
 
-        // 5. Invia il risultato al frontend
-        res.json({ result });
-
-    } catch (error) {
-        console.error("Errore durante la generazione della fattura:", error.response?.data || error.message);
-        res.status(500).json({ error: 'Errore nella generazione della fattura' });
+        const normalized = enforceTotals(draft, requestedTotal, 22);
+        return res.json({ ok: true, data: normalized });
+    } catch (err) {
+        console.error("GENERA:", err?.response?.data || err.message);
+        res.status(500).json({ ok: false, error: "GENERATION_FAILED" });
     }
 }
-
-export { generaFattura };

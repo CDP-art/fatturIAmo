@@ -1,43 +1,39 @@
 import React from "react";
 import { useState } from "react";
+import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 export default function ModificaFattura() {
     const navigate = useNavigate();
     const location = useLocation();
-    const invoiceData = location.state?.invoice;
+    //la constate draft serve per gestire il draft della fattura
+    const draft = JSON.parse(localStorage.getItem("fatturiamo.draft") || "null");
+    //la constate invoiceData serve per gestire i dati della fattura
+    const invoiceData = location.state?.invoice || draft;
 
-    if (!invoiceData) {
-        navigate("/genera");
-        return null;
-    }
 
-    function handleExportFattura() {
-
-        if (!numeroFattura || !data || prodotti.length === 0) {
-            alert("Compila tutti i campi prima di proseguire");
-            return;
+    //con questo useEffect gestiamo il caso in cui non ci sia un draft(che è necessario per modificare una fattura)
+    useEffect(() => {
+        //Quindi se non c'è un draft, reindirizziamo l'utente alla pagina di generazione
+        if (!draft) {
+            navigate("/genera", { replace: true });
         }
+    }, [draft, navigate]);
 
-        navigate("/esporta", {
-            state: {
-                invoice: {
-                    numeroFattura,
-                    data,
-                    cliente: {
-                        nome: clienteNome,
-                        piva: clientePiva,
-                        indirizzo: clienteIndirizzo,
-                    },
-                    prodotti,
-                    imponibile: Number(imponibile.toFixed(2)),
-                    iva: Number(iva.toFixed(2)),
-                    totale: Number(totale),
-                },
-            },
-            replace: true,
-        })
-    }
+    if (!draft) return null;
+
+    //con questo useEffect gestiamo il caso in cui non ci sia un invoiceData(che è necessario per modificare una fattura)
+    /*  useEffect(() => {
+         if (!invoiceData) {
+             navigate("/genera", { replace: true });
+         }
+     }, [invoiceData, navigate]);
+ 
+     if (!invoiceData) return null; */
+
+
+
+
 
     const [numeroFattura, setNumeroFattura] = useState(invoiceData.numeroFattura);
     const [data, setData] = useState(invoiceData.data);
@@ -46,6 +42,7 @@ export default function ModificaFattura() {
     const [clienteIndirizzo, setClienteIndirizzo] = useState(invoiceData.cliente.indirizzo || "");
     const [prodotti, setProdotti] = useState(invoiceData.prodotti || []);
     const [aliquotaIva, setAliquotaIva] = useState(22);
+
 
     function updateProdotto(i, campo, valore) {
         const newProdotti = [...prodotti];
@@ -57,6 +54,30 @@ export default function ModificaFattura() {
         setProdotti(newProdotti);
     }
 
+    function aggiungiProdotto() {
+        setProdotti([
+            ...prodotti,
+            { descrizione: "", quantita: 1, prezzo: 0 },
+        ]);
+    }
+
+    function eliminaProdotto(indiceDaEliminare) {
+        const conferma = window.confirm("Vuoi davvero eliminare questa riga?");
+        if (!conferma) return;
+
+        setProdotti((prodottiCorrenti) => {
+            const indice = Number(indiceDaEliminare);
+            if (!Array.isArray(prodottiCorrenti)) return [];
+            if (Number.isNaN(indice) || indice < 0 || indice >= prodottiCorrenti.length) return prodottiCorrenti;
+
+            const copia = [...prodottiCorrenti];
+            copia.splice(indice, 1);
+            return copia;
+        });
+    }
+
+
+    // 6) Derivate
     const imponibile = prodotti.reduce((acc, item) => {
         const subtot = Number(item.quantita) * Number(item.prezzo);
         return acc + (isNaN(subtot) ? 0 : subtot);
@@ -65,20 +86,27 @@ export default function ModificaFattura() {
     const iva = (imponibile * aliquotaIva) / 100;
     const totale = (imponibile + iva).toFixed(2);
 
-    function aggiungiProdotto() {
-        setProdotti([
-            ...prodotti,
-            {
-                descrizione: "",
-                quantita: 1,
-                prezzo: 0,
-            },
-        ]);
-    }
+    // 7) Handler export (ora dopo gli state/derivate che usa)
+    function handleExportFattura() {
+        if (!numeroFattura || !data || prodotti.length === 0) {
+            alert("Compila tutti i campi prima di proseguire");
+            return;
+        }
 
-    function eliminaProdotto(prodottoDaEliminare) {
-        const nuoviProdotti = prodotti.filter((_, i) => i !== prodottoDaEliminare);
-        setProdotti(nuoviProdotti);
+        navigate("/esporta", {
+            state: {
+                invoice: {
+                    numeroFattura,
+                    data,
+                    cliente: { nome: clienteNome, piva: clientePiva, indirizzo: clienteIndirizzo },
+                    prodotti,
+                    imponibile: Number(imponibile.toFixed(2)),
+                    iva: Number(iva.toFixed(2)),
+                    totale: Number(totale),
+                },
+            },
+            replace: true,
+        });
     }
 
     return (

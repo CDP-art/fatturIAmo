@@ -1,106 +1,70 @@
-import React from "react";
-import { useState, useEffect } from "react";
+// src/components/PromptInput.jsx
+import React, { useState } from "react";
 import axios from "axios";
-import OutputButtons from "./OutputButtons";
-import FatturaIA from "./FatturaIA";
 import { useNavigate } from "react-router-dom";
-//import { generaPrompt } from "../utils/promptBuilder";
-
-
 
 export default function PromptInput() {
-
-    const navigate = useNavigate();
-    const handleEdit = () => {
-        navigate("/modifica", { state: { invoice: output } });
-    };
-
-
-    const [prompt, setPrompt] = useState("");
-    const [output, setOutput] = useState("");
+    const [text, setText] = useState("");
     const [isLoading, setIsLoading] = useState(false);
-    const [showButtons, setShowButtons] = useState(false);
+    const [err, setErr] = useState("");
+    const navigate = useNavigate();
 
-    // Funzione asincrona per inviare il prompt al backend
-    async function fetchFattura(prompt) {
-        try {
-            const res = await axios.post('http://localhost:8000/genera',
-                { prompt },
-                {
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                }
-            );
-            setTimeout(() => {
-                setOutput(res.data.result);
-                setIsLoading(false);
-            }, 2000); // Simula un ritardo di 2 secondi
-        } catch (error) {
-            console.error("Errore durante la generazione della fattura:", error);
-            alert("Si è verificato un errore durante la generazione della fattura. Riprova più tardi.");
-            setIsLoading(false);
-        }
-    }
-
-    // Quando si clicca su "Genera"
     const handleGenerate = async () => {
-        if (!prompt.trim()) {
-            alert("Per favore, inserisci una richiesta valida.");
+        setErr("");
+        if (!text.trim()) {
+            setErr("Scrivi cosa vuoi fatturare (es. Crea una fattura da 300€ per soprallugo).");
             return;
         }
+
         setIsLoading(true);
-        setOutput("");
-        setShowButtons(false);
-        await fetchFattura(prompt);
-    };
 
-    useEffect(() => {
-        if (output) {
-            const delay = setTimeout(() => setShowButtons(true), 1000);
-            return () => clearTimeout(delay);
+        try {
+            // 1) prendo il fornitore salvato
+            const supplier = JSON.parse(localStorage.getItem("fatturiamo.supplier") || "null");
+
+            // 2) chiamo il backend
+            const { data } = await axios.post("http://localhost:8000/genera", {
+                prompt: text,
+                supplier, // opzionale ma consigliato
+            });
+
+            // La risposta deve esistere e avere ok === true, altrimenti errore
+            if (!data || data.ok !== true) {
+                const messaggio = data && data.error
+                    ? `Generazione fallita: ${data.error}`
+                    : "Generazione fallita: risposta non valida dal server";
+                throw new Error(messaggio);
+            }
+
+
+            // 3) salvo il draft normalizzato e vado in modifica
+            localStorage.setItem("fatturiamo.draft", JSON.stringify(data.data));
+            navigate("/modifica");
+        } catch (e) {
+            console.error(e);
+            setErr("Qualcosa è andato storto nella generazione. Riprova.");
+        } finally {
+            setIsLoading(false);
         }
-    }, [output]);
-
-
-    const handleReset = () => {
-        setPrompt("");
-        setOutput("");
-        setShowButtons(false);
     };
 
     return (
-        <React.Fragment>
+        <>
             <textarea
-                placeholder='Es: "Vorrei una fattura di 160€ per la giornata lavorativa"'
-                className="w-full h-32 p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400 resize-none"
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                disabled={isLoading}
+                className="w-full border-2 border-purple-300 focus:border-purple-500 rounded-xl p-4 min-h-[140px] outline-none"
+                placeholder="Esempio: Crea una fattura da 150€ per una consulenza"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
             />
+            {err && <p className="text-red-600 text-sm mt-2">{err}</p>}
 
             <button
                 onClick={handleGenerate}
                 disabled={isLoading}
-                className={`w-full mt-4 py-3 font-semibold rounded-xl transition text-white ${isLoading ? "bg-purple-300 cursor-not-allowed" : "bg-purple-600 hover:bg-purple-700"
-                    }`}
+                className="w-full mt-4 py-3 rounded-2xl text-white bg-purple-600 hover:bg-purple-700 disabled:opacity-50"
             >
-                {isLoading ? "Generazione in corso..." : "Genera fattura"}
+                {isLoading ? "Generazione fattura in corso..." : "Genera fattura"}
             </button>
-
-
-            {/* {output && (
-                <pre>{JSON.stringify(output, null, 2)}</pre>
-            )} */}
-
-            {output && <FatturaIA rawOutput={output} />}
-
-            {showButtons && (
-                <OutputButtons
-                    onEdit={handleEdit}
-                    onReset={handleReset}
-                    invoice={output} />
-            )}
-        </React.Fragment>
+        </>
     );
 }

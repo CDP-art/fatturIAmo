@@ -1,96 +1,119 @@
-// utils/promptBuilder.js
-
 import axios from "axios";
 
-// Funzione 1: Estrae campi utili dal testo utente libero usando Gemini
-async function estraiDatiParziali(promptUtente) {
-
+export async function estraiDatiParziali(promptUtente) {
     const estrazionePrompt = `
-Estrai dal seguente testo i campi per una fattura. Se un dato manca, lascialo null.
+Estrarre SOLO i campi richiesti in JSON valido. Se un campo manca, usa null.
 
-Rispondi solo con un oggetto JSON valido, senza testo prima o dopo, e senza blocchi di codice (niente triple backtick).
+Campi:
+- nomeCliente (string|null)
+- importoTotale (number|null)        // cifra principale menzionata
+- ivaInclusa (boolean|null)          // true se "iva inclusa/compresa", false se "iva esclusa", altrimenti null
+- descrizioneServizio (string|null)
+- data (string|null)                 // qualsiasi formato trovato, non trasformare
+- citta (string|null)
+- oreLavoro (number|null)
 
-Campi richiesti:
-- nomeCliente (string)
-- importoTotale (number, usa il punto come separatore decimale)
-- descrizioneServizio (string)
-- data (string, formato DD-MM-YYYY)
-- città (string)
-- oreLavoro (number)
-
-Testo utente: "${promptUtente}"
-`.trim();
+Rispondi SOLO con JSON, senza testo extra.
+Testo: ${JSON.stringify(promptUtente)}
+  `.trim();
 
     try {
-        const response = await axios.post(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-            {
-                contents: [
-                    {
-                        parts: [{ text: estrazionePrompt }]
-                    }
-                ]
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
+        const payload = {
+            contents: [{ role: "user", parts: [{ text: estrazionePrompt }] }],
+            generationConfig: {
+                response_mime_type: "application/json",
+                temperature: 0.1,
+                maxOutputTokens: 300,
             },
-            {
-                headers: {
-                    "Content-Type": "application/json"
-                }
-            }
-        );
+        };
+        const r = await axios.post(url, payload, {
+            headers: { "Content-Type": "application/json" },
+            timeout: 12000,
+        });
 
-        const resultRaw = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!resultRaw) throw new Error("Gemini non ha restituito alcun contenuto");
+        const raw = r.data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+        let jsonText = (raw || "").trim();
 
-        const cleaned = resultRaw
-            .replace(/```json\n?/gi, '')
-            .replace(/```/, '')
-            .trim();
-        return JSON.parse(cleaned);
+        if (!jsonText.startsWith("{")) {
+            const m = jsonText.match(/\{[\s\S]*\}/);
+            jsonText = m ? m[0] : "{}";
+        }
 
-    } catch (error) {
-        console.error("Errore durante l'estrazione dei dati parziali:", error.response?.data || error.message);
+        const obj = JSON.parse(jsonText);
+        // return EstrSchema.parse(obj); // se usi Zod
+        return obj;
+    } catch (e) {
+        console.error("estraiDatiParziali:", e?.response?.data || e.message);
         return null;
     }
 }
 
-// Funzione 2: Crea un prompt ben strutturato per generare il JSON finale della fattura
-function generaPromptFattura(datiParziali, promptOriginale) {
+
+/** Costruisce il prompt finale per la fattura JSON */
+export function generaPromptFattura(datiParziali, promptOriginale, supplier) {
+    const sup = supplier || {};
     return `
-Sei un assistente contabile. Genera una fattura realistica in formato JSON valido e ben indentato.
+SEI UNO STRUMENTO CHE PRODUCE DATI STRUTTURATI. NON AGGIUNGERE TESTO FUORI DAL JSON.
 
-⚠️ Rispondi solo con il JSON. Niente testo prima o dopo, e non usare blocchi come \`\`\`json.
+REGOLE:
+- NON inventare servizi non richiesti.
+- Se mancano dati di cliente/fornitore, usa null o stringhe "N/D". NON inventare indirizzi reali.
+- Usa UNA SOLA riga se l'utente non chiede più voci.
+- Non calcolare totali; i calcoli li fa il server.
+- Usa numeri (non stringhe) e il punto come separatore decimale.
+- Data in formato ISO YYYY-MM-DD se presente o ricavabile, altrimenti null.
+- IVA di default 22% salvo indicazioni esplicite.
+- OUTPUT SOLO JSON valido, senza testo extra.
 
-Il JSON deve contenere:
-- numeroFattura (es: "001")
-- data (formato "DD-MM-YYYY")
-- cliente: oggetto con "nome", "piva", "indirizzo" (es: "Via Gaudenzio Ferrari 5, 10124 Torino (TO)")
-- fornitore: oggetto con "nome", "piva", "indirizzo" (facoltativo)
-- prodotti: array di oggetti con:
-  - descrizione (es: "Sviluppo sito web - 24 Ore")
-  - quantita (numero)
-  - prezzo (numero, per unità)
-- imponibile: numero
-- iva: numero
-- totale: numero
-
-Regole da seguire:
-- Se sono indicati giorni o settimane, converti in ore (1 giorno = 8h, 1 settimana = 40h)
-- Se l’IVA non è specificata, considera che l’importo è con IVA inclusa
-- Completa con dati realistici mancanti
-- Se manca la città, inventala
-- Se manca l’indirizzo completo, creane uno realistico
-- L'indirizzo deve essere nel formato: "Via Nome, CAP Città"
-- Tra i prodotti, includi sempre una voce per le ore lavorate, con descrizione contenente la parola "Ore"
-
-
----
-Dati parziali estratti:
-${JSON.stringify(datiParziali, null, 2)}
-
----
-Testo utente originale:
-"${promptOriginale}"
-`.trim();
+SCHEMA OBBLIGATORIO:
+{
+  "numeroFattura": null,
+  "data": "YYYY-MM-DD" | null,
+  "cliente": { "ragioneSociale": string|null, "piva": string|null, "indirizzo": string|null },
+  "fornitore": { "ragioneSociale": ${JSON.stringify(sup.ragioneSociale ?? null)}, "piva": ${JSON.stringify(sup.piva ?? null)}, "indirizzo": ${JSON.stringify(sup.indirizzo ?? null)} },
+  "righe": [
+    { "descrizione": string, "ore": number, "tariffaOraria": number, "scontoPct": number|null }
+  ],
+  "opzioni": {
+    "aliquotaIvaPct": number,          // default 22
+    "regimeForfettario": boolean|null, // default false
+    "ritenutaPct": number|null,        // se non menzionata -> null
+    "cassaPct": number|null            // se non menzionata -> null
+  },
+  "vincoli": {
+    "totaleLordo": number|null         // se "ivaInclusa" è true e "importoTotale" esiste, metti quel valore; altrimenti null
+  },
+  "note": string|null
 }
 
-export { estraiDatiParziali, generaPromptFattura };
+ISTRUZIONI SPECIFICHE:
+- Se l'utente parla di "quantità" ma intende ore, mappa "quantità" -> "ore".
+- Se "ivaInclusa" è true e c'è "importoTotale", NON calcolare tu l'imponibile: imposta "vincoli.totaleLordo" a quel numero.
+- "descrizione" deve essere chiara ma concisa (niente marketing).
+- "scontoPct": se non citato uno sconto, usa null.
+
+ESEMPIO (solo per forma, NON copiarlo alla lettera):
+{
+  "numeroFattura": null,
+  "data": "2025-08-27",
+  "cliente": { "ragioneSociale": "ACME Srl", "piva": "IT12345678901", "indirizzo": "N/D" },
+  "fornitore": { "ragioneSociale": ${JSON.stringify(sup.ragioneSociale ?? null)}, "piva": ${JSON.stringify(sup.piva ?? null)}, "indirizzo": ${JSON.stringify(sup.indirizzo ?? null)} },
+  "righe": [
+    { "descrizione": "Sviluppo web - refactoring componente", "ore": 12, "tariffaOraria": 60, "scontoPct": null }
+  ],
+  "opzioni": { "aliquotaIvaPct": 22, "regimeForfettario": false, "ritenutaPct": null, "cassaPct": null },
+  "vincoli": { "totaleLordo": null },
+  "note": null
+}
+
+---
+Dati parziali rilevati:
+${JSON.stringify(datiParziali ?? {}, null, 2)}
+
+---
+Testo utente:
+${JSON.stringify(promptOriginale)}
+  `.trim();
+}
+
