@@ -54,7 +54,7 @@ export default function FatturaIA({ rawOutput }) {
             prezzo = totaleRiga / quantita;
         }
         // se manca il totale, lo calcolo
-        if (!totaleRiga) {
+        if ((!totaleRiga || totaleRiga === 0) && prezzo && quantita) {
             totaleRiga = quantita * prezzo;
         }
 

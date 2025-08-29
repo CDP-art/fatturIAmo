@@ -2,18 +2,18 @@ import axios from "axios";
 
 export async function estraiDatiParziali(promptUtente) {
   const estrazionePrompt = `
-Estrarre SOLO i campi richiesti in JSON valido. Se un campo manca, usa null.
+Estrai SOLO i seguenti campi in JSON valido. Se un campo non è presente, OMETTILO del tutto (non usare null).
 
-Campi:
-- nomeCliente (string|null)
-- importoTotale (number|null)        // cifra principale menzionata
-- ivaInclusa (boolean|null)          // true se "iva inclusa/compresa", false se "iva esclusa", altrimenti null
-- descrizioneServizio (string|null)
-- data (string|null)                 // qualsiasi formato trovato, non trasformare
-- citta (string|null)
-- oreLavoro (number|null)
+Campi richiesti:
+- nomeCliente (string)
+- importoTotale (number)
+- ivaInclusa (boolean)
+- descrizioneServizio (string)
+- data (string)
+- citta (string)
+- oreLavoro (number)
 
-Rispondi SOLO con JSON, senza testo extra.
+Rispondi SOLO con JSON valido, senza testo extra.
 Testo: ${JSON.stringify(promptUtente)}
   `.trim();
 
@@ -27,93 +27,88 @@ Testo: ${JSON.stringify(promptUtente)}
         maxOutputTokens: 300,
       },
     };
+
     const r = await axios.post(url, payload, {
       headers: { "Content-Type": "application/json" },
       timeout: 12000,
     });
 
     const raw = r.data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-    let jsonText = (raw || "").trim();
+    let jsonText = raw.trim();
 
     if (!jsonText.startsWith("{")) {
       const m = jsonText.match(/\{[\s\S]*\}/);
       jsonText = m ? m[0] : "{}";
     }
 
-    const obj = JSON.parse(jsonText);
-    // return EstrSchema.parse(obj); // se usi Zod
-    return obj;
+    return JSON.parse(jsonText);
   } catch (e) {
     console.error("estraiDatiParziali:", e?.response?.data || e.message);
     return null;
   }
 }
 
-
-/** Costruisce il prompt finale per la fattura JSON */
 export function generaPromptFattura(datiParziali, promptOriginale, supplier) {
   const sup = supplier || {};
   return `
-SEI UNO STRUMENTO CHE PRODUCE DATI STRUTTURATI. NON AGGIUNGERE TESTO FUORI DAL JSON.
+SEI UNO STRUMENTO CHE GENERA JSON STRUTTURATO. NON AGGIUNGERE COMMENTI O TESTO ESTERNO.
 
 REGOLE:
 - NON inventare servizi non richiesti.
-- Se mancano dati di cliente/fornitore, riempili utilizzando dati reali. Sia di nomi e sia di indirizzi.
-- Usa UNA SOLA riga se l'utente non chiede più voci per i servizi
-- Non calcolare totali; i calcoli li fa il server.
-- Usa numeri (non stringhe) e il punto come separatore decimale.
-- Data in formato ISO DD/MM/YYYY se presente o ricavabile, altrimenti null.
-- IVA di default 22% salvo indicazioni esplicite.
-- OUTPUT SOLO JSON valido, senza testo extra.
+- Se mancano dati di cliente/fornitore, usa nomi e indirizzi plausibili.
+- Usa UNA SOLA riga se l'utente non specifica più voci.
+- NON calcolare totali o IVA. Il server si occupa dei calcoli.
+- Usa numeri veri (non stringhe) e il punto per i decimali.
+- Usa formato data DD/MM/YYYY se presente, altrimenti ometti il campo.
+- Se un campo è sconosciuto, NON includerlo nel JSON (non usare null o 0).
+- Restituisci SOLO i campi utili secondo lo schema seguente.
 
-SCHEMA OBBLIGATORIO:
+SCHEMA RICHIESTO:
 {
-  "numeroFattura": null,
-  "data": "DD/MM/YYYY" | null,
-  "cliente": { "ragioneSociale": string|null, "piva": string|null, "indirizzo": string|null },
-  "fornitore": { "ragioneSociale": ${JSON.stringify(sup.ragioneSociale ?? null)}, "piva": ${JSON.stringify(sup.piva ?? null)}, "indirizzo": ${JSON.stringify(sup.indirizzo ?? null)} },
+  "numeroFattura": string?,
+  "data": string?,
+  "cliente": {
+    "ragioneSociale": string,
+    "piva": string?,
+    "indirizzo": string?
+  },
+  "fornitore": {
+    "ragioneSociale": ${JSON.stringify(sup.ragioneSociale)},
+    "piva": ${JSON.stringify(sup.piva)},
+    "indirizzo": ${JSON.stringify(sup.indirizzo)}
+  },
   "righe": [
-    { "descrizione": string, "ore": number, "tariffaOraria": number, "scontoPct": number|null }
+    {
+      "descrizione": string,
+      "ore": number?,
+      "tariffaOraria": number?,
+      "scontoPct": number?
+    }
   ],
   "opzioni": {
-    "aliquotaIvaPct": number,          // default 22
-    "regimeForfettario": boolean|null, // default false
-    "ritenutaPct": number|null,        // se non menzionata -> null
-    "cassaPct": number|null            // se non menzionata -> null
+    "aliquotaIvaPct": number
   },
   "vincoli": {
-    "totaleLordo": number|null         // se "ivaInclusa" è true e "importoTotale" esiste, metti quel valore; altrimenti null
+    "totaleLordo": number?
   },
-  "note": string|null
+  "note": string?
 }
 
-ISTRUZIONI SPECIFICHE:
-- Se l'utente parla di "quantità" ma intende ore, mappa "quantità" -> "ore".
-- Se "ivaInclusa" è true e c'è "importoTotale", NON calcolare tu l'imponibile: imposta "vincoli.totaleLordo" a quel numero.
-- "descrizione" deve essere chiara ma concisa (niente marketing).
-- "scontoPct": se non citato uno sconto, usa null.
+ISTRUZIONI:
+- Se l'utente usa "quantità" per intendere ore, converti in "ore".
+- Se è indicato un importo con IVA inclusa, metti quel valore in "vincoli.totaleLordo".
+- "scontoPct": ometti se non menzionato.
+- Se è presente un importo ma mancano righe e/o servizi, crea almeno una riga.
+  Se mancano ore/tariffaOraria, oppure quantità/prezzo, imposta: quantità = 1, prezzo = importo (IVA esclusa).
+- Se mancano "ore" e "tariffaOraria", ma esiste "totaleLordo", imposta ore = 1 e tariffaOraria = totaleLordo.
 
-ESEMPIO (solo per forma, NON copiarlo alla lettera):
-{
-  "numeroFattura": null,
-  "data": "2025-08-27",
-  "cliente": { "ragioneSociale": "ACME Srl", "piva": "IT12345678901", "indirizzo": "N/D" },
-  "fornitore": { "ragioneSociale": ${JSON.stringify(sup.ragioneSociale ?? null)}, "piva": ${JSON.stringify(sup.piva ?? null)}, "indirizzo": ${JSON.stringify(sup.indirizzo ?? null)} },
-  "righe": [
-    { "descrizione": "Sviluppo web - refactoring componente", "ore": 12, "tariffaOraria": 60, "scontoPct": null }
-  ],
-  "opzioni": { "aliquotaIvaPct": 22, "regimeForfettario": false, "ritenutaPct": null, "cassaPct": null },
-  "vincoli": { "totaleLordo": null },
-  "note": null
-}
 
 ---
-Dati parziali rilevati:
+Dati parziali estratti:
 ${JSON.stringify(datiParziali ?? {}, null, 2)}
 
 ---
-Testo utente:
+Prompt utente:
 ${JSON.stringify(promptOriginale)}
   `.trim();
 }
-

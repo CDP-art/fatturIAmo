@@ -1,9 +1,9 @@
-
 import React, { useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { FaFilePdf } from "react-icons/fa";
+import EsportazioneCard from "../components/EsportazioneCard";
+import EsportazioneButtons from "../components/EsportazioneButtons";
 
 function safeGetLS(key, def = null) {
     try {
@@ -19,33 +19,33 @@ function formatEuro(value) {
     return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(num);
 }
 
-// Colori applicazione (approx)
 const COLORS = {
-    purple: [124, 58, 237], // text-purple-600
-    blue: [37, 99, 235],    // bg-blue-600
+    purple: [124, 58, 237],
+    blue: [37, 99, 235],
     gray: [80, 80, 80],
 };
 
-// Margini base PDF
 const MARGIN = { left: 18, top: 16, right: 18, bottom: 16 };
 
 export default function EsportaFatturaPDF() {
     const navigate = useNavigate();
     const location = useLocation();
-
-    // Recupero bozza fattura: dallo state o da localStorage
+    // Provo a caricare la fattura dallo stato (es. da una pagina precedente)
     const invoiceFromState = location.state?.invoice || null;
+
+    // Se non esiste, provo a caricarla dal localStorage (es. salvataggio automatico)
     const invoiceFromLS = useMemo(() => safeGetLS("fatturiamo.draft", null), []);
+
+    // Uso quella che trovo per prima
     const invoice = invoiceFromState || invoiceFromLS;
 
-    // Se non ho i dati, torno alla home
+
     useEffect(() => {
         if (!invoice) navigate("/");
     }, [invoice, navigate]);
 
     if (!invoice) return null;
 
-    // Handler: genera il PDF e lo salva
     const handleGeneratePDF = () => {
         try {
             generateInvoicePDF(invoice);
@@ -55,12 +55,11 @@ export default function EsportaFatturaPDF() {
         }
     };
 
-    function handleGenerateXML(invoice) {
+    const handleGenerateXML = (invoice) => {
         const cliente = invoice?.cliente || {};
         const prodotti = invoice?.prodotti || [];
 
-        const xml = `
-<?xml version="1.0" encoding="UTF-8"?>
+        const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <Fattura>
   <Intestazione>
     <Numero>${invoice?.numeroFattura || invoice?.numero || "N/D"}</Numero>
@@ -79,165 +78,157 @@ export default function EsportaFatturaPDF() {
         <Descrizione>${p.descrizione || ""}</Descrizione>
         <Ore>${p.ore || p.quantita || 0}</Ore>
         <Tariffa>${p.tariffa || p.prezzo || 0}</Tariffa>
-      </Riga>
-    `).join("\n")}
+      </Riga>`).join("\n")}
   </DettaglioLinee>
   <Totali>
     <Imponibile>${invoice?.imponibile || 0}</Imponibile>
     <IVA>${invoice?.iva || 0}</IVA>
     <Totale>${invoice?.totale || 0}</Totale>
   </Totali>
-</Fattura>
-`.trim();
+</Fattura>`.trim();
 
         const blob = new Blob([xml], { type: "application/xml" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
-        const filename = `Fattura_${invoice?.numero || "senza-numero"}.xml`;
         a.href = url;
-        a.download = filename;
+        a.download = `Fattura_${invoice?.numero || "senza-numero"}.xml`;
         a.click();
         URL.revokeObjectURL(url);
-    }
+    };
 
     return (
-        <React.Fragment>
-            <div className="h-screen bg-gradient-to-br from-blue-300 via-white to-purple-300 py-10 px-10 flex flex-col items-center justify-center">
-                <h1 className="text-2xl sm:text-3xl font-bold text-center mb-10">Esporta la fattura</h1>
-
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-10">
-                    {/* PDF */}
-                    <div className="w-full sm:w-[420px] min-h-[360px] bg-white rounded-2xl shadow-lg p-6 sm:p-8 text-gray-800 flex flex-col justify-between">
-                        <p className="text-center text-gray-600 mb-8">Crea un PDF formale con tutti i dati obbligatori di fornitore e cliente.</p>
-
-                        <button
-                            onClick={handleGeneratePDF}
-                            className="w-full flex items-center justify-center gap-2 border-2 border-purple-200 hover:border-purple-400 hover:bg-purple-50 p-4 rounded-xl transition shadow-md"
-                        >
-                            <FaFilePdf className="text-2xl text-purple-600" />
-                            <span className="text-lg font-medium">Esporta in PDF</span>
-                        </button>
-
-                        <div className="mt-8 text-center">
-                            <button onClick={() => navigate("/")} className="text-sm text-blue-600 hover:underline">Torna alla Home</button>
-                        </div>
-                    </div>
-
-                    {/* XML */}
-                    <div className="w-full sm:w-[420px] min-h-[360px] bg-white rounded-2xl shadow-lg p-6 sm:p-8 text-gray-800 flex flex-col justify-between">
-                        <p className="text-center text-gray-600 mb-8">Esporta la fattura in un file XML compatibile con software gestionali.</p>
-
-                        <button
-                            onClick={() => handleGenerateXML(invoice)}
-                            className="w-full flex items-center justify-center gap-2 border-2 border-purple-200 hover:border-purple-400 hover:bg-purple-50 p-4 rounded-xl transition shadow-md"
-                        >
-                            <FaFilePdf className="text-2xl text-purple-600" />
-                            <span className="text-lg font-medium">Esporta in XML</span>
-                        </button>
-
-                        <div className="mt-8 text-center">
-                            <button onClick={() => navigate("/")} className="text-sm text-blue-600 hover:underline">Torna alla Home</button>
-                        </div>
+        <>
+            <div className="relative h-screen w-full bg-gradient-to-br from-blue-300 via-white to-purple-300">
+                <div className="absolute inset-0 bg-black/5 backdrop-blur-sm z-0" />
+                <div className="relative z-10 flex flex-col items-center justify-center h-full px-10 py-10">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-center mb-10">Esporta la fattura</h1>
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-10">
+                        <EsportazioneCard descrizioneCard="Crea un PDF formale con tutti i dati obbligatori di fornitore e cliente.">
+                            <EsportazioneButtons action={handleGeneratePDF} testoBottone="Esporta in PDF" />
+                        </EsportazioneCard>
+                        <EsportazioneCard descrizioneCard="Esporta un file XML compatibile con i requisiti della fatturazione elettronica.">
+                            <EsportazioneButtons action={() => handleGenerateXML(invoice)} testoBottone="Esporta in XML" />
+                        </EsportazioneCard>
                     </div>
                 </div>
             </div>
-        </React.Fragment>
+        </>
     );
 }
 
+
 // --- Funzione principale che disegna il PDF ---
 function generateInvoicePDF(invoice) {
-    // Dati fornitore messi dall’utente in pagina Fornitore
+    //supplier serve per recuperare i dati del fornitore
     const supplier = safeGetLS("fatturiamo.supplier", null);
-
-    // Estraggo con fallback per evitare crash
+    //numero serve per identificare univocamente la fattura (numero fattura)
     const numero = invoice?.numeroFattura || invoice?.numero || "N/D";
+    //dataFattura è la data scritta dal fornitore o (se manca) la data odierna
     const dataFattura = invoice?.data || invoice?.dataFattura || new Date().toLocaleDateString("it-IT");
-
-    // Cliente (atteso dentro la bozza)
+    //cliente serve per recuperare i dati del cliente
     const cliente = invoice?.cliente || {};
-
-    // Righe (supporta sia quantita/prezzo che ore/tariffa)
+    //righe serve per recuperare i prodotti/servizi della fattura(ogni servizio, una riga)
+    //uso Array.isArray perchè in caso contrario si rischia di avere un oggetto invece di un array
     const righe = Array.isArray(invoice?.prodotti) ? invoice.prodotti : [];
+    /*
+    let righe;
+    if (Array.isArray(invoice?.prodotti)) {
+        righe = invoice.prodotti;
+    } else {
+        righe = [];
+    }
+    */
 
-    // Valori economici
+    // Calcolo dei totali
     const imponibile = Number(invoice?.imponibile || 0);
+    // IVA
     const iva = Number(invoice?.iva || 0);
-    const totale = Number(invoice?.totale || imponibile + iva);
+    //calcolo del totale
+    const totale = invoice?.totale != null ? Number(invoice.totale) : imponibile + iva;
+    /* let totale;
+    if (invoice?.totale != null) {
+        totale = Number(invoice.totale);
+    }else{
+        totale = imponibile + iva;
+    } */
 
-    // Campi fiscali opzionali
     const terminiPagamento = invoice?.terminiPagamento || "Pagamento a 30 giorni data fattura";
     const metodoPagamento = invoice?.metodoPagamento || "Bonifico bancario";
-    const iban = (supplier && supplier.iban) || invoice?.iban || "";
-    const sdi = (supplier && supplier.sdi) || invoice?.sdi || ""; // Codice Destinatario (per e-fattura)
-    const pec = (supplier && (supplier.pec || supplier.email)) || ""; // usa PEC o email
+    const iban = supplier?.iban || invoice?.iban || "";
+    const sdi = supplier?.sdi || invoice?.sdi || "";
+    const pec = supplier?.pec || supplier?.email || "";
     const cfFornitore = supplier?.cf || "";
-    const regimeFiscale = supplier?.regimeFiscale || ""; // es. RF01, Forfettario ecc.
+    const regimeFiscale = supplier?.regimeFiscale || "";
 
-    // Inizializzo PDF (A4 verticale)
     const doc = new jsPDF({ unit: "pt", format: "a4" });
 
-    // Disegno header con banda colore e logo
+    // Inizio disegno PDF
     drawHeader(doc, { numero, dataFattura }, supplier);
 
-    // Box Fornitore e Cliente
-    let cursorY = 140; // posizione di partenza dopo header
-    cursorY = drawSupplierBox(doc, supplier, cursorY);
-    cursorY = drawClientBox(doc, cliente, cursorY);
-
-    // Box dati fattura (numero, data, pagamento)
-    cursorY = drawInvoiceInfoBox(doc, { numero, dataFattura, terminiPagamento, metodoPagamento, iban, sdi, pec, cfFornitore, regimeFiscale }, cursorY);
-
-    // Tabella righe
+    let cursorY = 140;
+    cursorY = drawSupplierBox(doc, supplier, cursorY, dataFattura);
+    cursorY = drawClientBox(doc, cliente, cursorY, dataFattura);
+    cursorY = drawInvoiceInfoBox(doc, {
+        numero,
+        dataFattura,
+        terminiPagamento,
+        metodoPagamento,
+        iban,
+        sdi,
+        pec,
+        cfFornitore,
+        regimeFiscale,
+    }, cursorY);
     cursorY = drawItemsTable(doc, righe, cursorY);
-
-    // Riepilogo economico
     cursorY = drawTotals(doc, { imponibile, iva, totale }, cursorY);
+    drawFooter(doc, supplier);
 
-    // Footer (pagina, nota)
-    drawFooter(doc);
+    const clienteNome = (cliente?.nome || cliente?.denominazione || "cliente")
+        .toString()
+        .replace(/[/\\<>:"|?*]+/g, "_");
 
-    // Nome file professionale
-    const clienteNome = (cliente?.nome || cliente?.denominazione || "cliente").toString().replace(/[/\\<>:"|?*]+/g, "_");
     const filename = `Fattura_${numero}_${clienteNome}.pdf`;
     doc.save(filename);
 }
 
-// --- Header ---
-function drawHeader(doc, testata, supplier) {
-    const W = doc.internal.pageSize.getWidth();
-    const cx = W / 2;
 
-    doc.setTextColor(...COLORS.gray);
+// --- Header ---
+function drawHeader(doc, { numero, dataFattura }, supplier) {
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const logoSize = 64;
 
     // Logo a sinistra
     if (supplier?.logoDataUrl) {
         try {
-            doc.addImage(supplier.logoDataUrl, "PNG", MARGIN.left, 24, 64, 64);
-        } catch { }
+            doc.addImage(supplier.logoDataUrl, "PNG", MARGIN.left, MARGIN.top, logoSize, logoSize);
+        } catch {
+            console.warn("Logo non valido");
+        }
     }
 
-    // Dati azienda a destra
-    const rightX = W - MARGIN.right;
-    doc.setFontSize(16);
+    // Dati testata a destra
+    const rightX = pageWidth - MARGIN.right;
+    const topY = MARGIN.top + 8;
+
+    doc.setFontSize(18);
     doc.setFont(undefined, "bold");
-    doc.text(String(supplier?.ragioneSociale || "La tua azienda"), rightX, 38, { align: "right" });
+    doc.setTextColor(20);
+    doc.text(supplier?.ragioneSociale || "Nome Azienda", rightX, topY + 4, { align: "right" });
 
-    if (supplier?.settore || supplier?.ruolo) {
-        doc.setFontSize(9);
-        doc.setFont(undefined, "normal");
-        doc.text(String(supplier.settore || supplier.ruolo), rightX, 54, { align: "right" });
-    }
-
-    // Titolo + numero centrati
-    doc.setFontSize(22);
-    doc.setFont(undefined, "bold");
-    doc.text("FATTURA", cx, 110, { align: "center" });
-
-    doc.setFontSize(11);
+    doc.setFontSize(12);
     doc.setFont(undefined, "normal");
-    doc.text(`#${String(testata.numero)}`, cx, 126, { align: "center" });
+    doc.setTextColor(80);
+    doc.text(`Fattura n. ${numero}`, rightX, topY + 24, { align: "right" });
+    doc.text(`Data: ${dataFattura}`, rightX, topY + 40, { align: "right" });
+
+    // Linea separatrice
+    const lineY = topY + 52;
+    doc.setDrawColor(180);
+    doc.setLineWidth(0.5);
+    doc.line(MARGIN.left, lineY, rightX, lineY);
 }
+
+
 
 // --- Box Fornitore ---
 function drawSupplierBox(doc, supplier, startY) {
@@ -245,50 +236,48 @@ function drawSupplierBox(doc, supplier, startY) {
 }
 
 // --- Box Cliente ---
-function drawClientBox(doc, cliente, startY) {
-    let y = Math.max(startY, 150);
+function drawClientBox(doc, cliente, startY, dataFattura) {
+    let y = Math.max(startY + 20, 120); // aggiungo un po’ di margine sopra
 
-    // Etichette
+    // Etichetta
     doc.setFontSize(10);
     doc.setFont(undefined, "bold");
     doc.setTextColor(...COLORS.gray);
     doc.text("FATTURATO A:", MARGIN.left, y);
 
-    doc.text("DATA:", doc.internal.pageSize.getWidth() - MARGIN.right - 120, y, { align: "left" });
-
-    // Valori
+    // Dati cliente
     y += 14;
     doc.setFont(undefined, "normal");
-    const billedLines = [
+    doc.setTextColor(20);
+
+    const clienteLines = [
         cliente?.nome || cliente?.denominazione || "",
         cliente?.indirizzo || "",
+        cliente?.cap && cliente?.citta ? `${cliente.cap} ${cliente.citta}` : "",
         cliente?.piva ? `P.IVA: ${cliente.piva}` : "",
         cliente?.cf ? `CF: ${cliente.cf}` : "",
-        cliente?.email ? `Email: ${cliente.email}` : "",
-        cliente?.pec ? `PEC: ${cliente.pec}` : "",
+        cliente?.email || cliente?.pec || "",
     ].filter(Boolean);
 
-    billedLines.forEach((line, i) => {
+    clienteLines.forEach((line, i) => {
         doc.text(line, MARGIN.left, y + i * 12);
     });
 
-    // Data a destra
-    doc.text(
-        String(new Date().toLocaleDateString("it-IT")),
-        doc.internal.pageSize.getWidth() - MARGIN.right,
-        y,
-        { align: "right" }
-    );
+    y += clienteLines.length * 12 + 16;
 
-    // Sposto y alla fine dei dati cliente
-    y += billedLines.length * 12 + 10;
+    // Data della fattura (sotto i dati cliente)
+    doc.setFont(undefined, "bold");
+    doc.setTextColor(...COLORS.gray);
+    doc.text("DATA:", MARGIN.left, y);
 
-    // Linea divisoria sottile
-    doc.setDrawColor(220);
-    doc.line(MARGIN.left, y, doc.internal.pageSize.getWidth() - MARGIN.right, y);
+    doc.setFont(undefined, "normal");
+    doc.setTextColor(20);
+    doc.text(String(dataFattura), MARGIN.left + 42, y); // leggermente spostata a destra
 
-    return y + 8;
+    return y + 20; // restituisco la nuova Y per continuare il flusso
 }
+
+
 
 // --- Box Info Fattura / Pagamenti ---
 function drawInvoiceInfoBox(doc, info, startY) {
@@ -300,35 +289,52 @@ function drawItemsTable(doc, righe, startY) {
     const head = [["Descrizione", "Tariffa", "Ore", "Importo"]];
 
     const body = (righe || []).map((r) => {
-        const hours = r.ore ?? r.quantita ?? 0;
-        const rate = r.tariffa ?? r.prezzo ?? 0;
-        const amount = Number(hours) * Number(rate);
+        const ore = Number(r.ore ?? r.quantita ?? 0);
+        const tariffa = Number(r.tariffa ?? r.tariffaOraria ?? r.prezzo ?? 0);
+        const importo = ore * tariffa;
+
+        const labelTariffa = (ore && r.ore !== undefined)
+            ? `${formatEuro(tariffa)}/h`
+            : formatEuro(tariffa);
+
         return [
             r.descrizione || "",
-            `${formatEuro(rate)}/h`,
-            String(hours),
-            formatEuro(amount),
+            labelTariffa,
+            String(ore),
+            formatEuro(importo),
         ];
     });
 
     autoTable(doc, {
-        startY: startY + 6,
+        startY: startY + 10,
         head,
         body,
-        styles: { fontSize: 10, lineColor: [235, 235, 235], lineWidth: 0.8 },
-        headStyles: { fillColor: [255, 255, 255], textColor: [60, 60, 60], fontStyle: "bold" },
         theme: "grid",
         margin: { left: MARGIN.left, right: MARGIN.right },
+        styles: {
+            fontSize: 10,
+            textColor: [20, 20, 20],
+            lineWidth: 0.5,
+            lineColor: [180, 180, 180],
+            valign: "middle",
+        },
+        headStyles: {
+            fillColor: [240, 240, 240],
+            textColor: [0, 0, 0],
+            fontStyle: "bold",
+            halign: "center",
+        },
         columnStyles: {
-            0: { cellWidth: 260 },
-            1: { halign: "right" },
-            2: { halign: "right" },
-            3: { halign: "right" },
+            0: { cellWidth: 240, halign: "left" },   // descrizione
+            1: { cellWidth: 90, halign: "right" },   // tariffa
+            2: { cellWidth: 60, halign: "right" },   // ore
+            3: { cellWidth: 90, halign: "right" },   // importo
         },
     });
 
-    return (doc.lastAutoTable?.finalY || startY + 40) + 10;
+    return (doc.lastAutoTable?.finalY || startY + 100) + 10;
 }
+
 
 // Semplice euristica se manca aliquota su riga
 function invoiceGuessAliquota(riga) {
@@ -381,25 +387,85 @@ function drawTotals(doc, totals, startY) {
     return y + 10;
 }
 
-// --- Footer con pagina e nota ---
-function drawFooter(doc) {
+function drawPayToSection(doc, supplier, startY) {
+    let y = startY + 30;
 
+    const lines = [];
+
+    if (supplier?.banca) {
+        lines.push(`Banca: ${supplier.banca}`);
+    }
+
+    if (supplier?.intestatario) {
+        lines.push(`Intestatario: ${supplier.intestatario}`);
+    } else if (supplier?.ragioneSociale) {
+        lines.push(`Intestatario: ${supplier.ragioneSociale}`);
+    }
+
+    if (supplier?.iban) {
+        lines.push(`IBAN: ${supplier.iban}`);
+    }
+
+    if (lines.length === 0) {
+        return y; // Se non ci sono dati da mostrare, esco senza disegnare nulla
+    }
+
+    // Titolo sezione
+    doc.setFontSize(10);
+    doc.setFont(undefined, "bold");
+    doc.setTextColor(...COLORS.gray);
+    doc.text("DATI PER IL PAGAMENTO", MARGIN.left, y);
+
+    y += 16;
+
+    // Dati di pagamento
+    doc.setFont(undefined, "normal");
+    doc.setTextColor(0);
+
+    lines.forEach((line, i) => {
+        doc.text(line, MARGIN.left, y + i * 14);
+    });
+
+    return y + lines.length * 14 + 10;
+}
+
+
+// --- Footer con pagina e nota ---
+function drawFooter(doc, supplier) {
     const pageCount = doc.getNumberOfPages();
+    const W = doc.internal.pageSize.getWidth();
+    const H = doc.internal.pageSize.getHeight();
+
+    // Dati fornitore da mostrare centrati
+    const footerLines = [
+        supplier?.ragioneSociale || "",
+        supplier?.indirizzo || "",
+        supplier?.piva ? `P.IVA: ${supplier.piva}` : "",
+        supplier?.cf ? `CF: ${supplier.cf}` : "",
+        supplier?.email || supplier?.pec || "",
+    ].filter(Boolean);
+
     for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
+
+        const footerY = H - MARGIN.bottom;
+
+        // Linea divisoria sopra il footer
+        doc.setDrawColor(200);
+        doc.line(MARGIN.left, footerY - 28, W - MARGIN.right, footerY - 28);
+
+        // Testo footer centrato
         doc.setFontSize(9);
-        doc.setTextColor(120);
+        doc.setTextColor(80);
+        doc.setFont(undefined, "normal");
+
+        footerLines.forEach((line, index) => {
+            doc.text(line, W / 2, footerY - 12 + index * 12, { align: "center" });
+        });
+
+        // Numero pagina (in basso a destra)
         const pageLabel = `Pagina ${i} di ${pageCount}`;
-        doc.text(
-            pageLabel,
-            doc.internal.pageSize.getWidth() - MARGIN.right,
-            doc.internal.pageSize.getHeight() - 10,
-            { align: "right" }
-        );
-        doc.text(
-            "Generato automaticamente da FatturIAmo",
-            MARGIN.left,
-            doc.internal.pageSize.getHeight() - 10
-        );
+        doc.text(pageLabel, W - MARGIN.right, H - 10, { align: "right" });
     }
 }
+

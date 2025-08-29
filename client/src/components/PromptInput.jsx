@@ -31,7 +31,7 @@ function normalizeInvoice(json) {
         numeroFattura: json?.numeroFattura || json?.numero || "",
         data: json?.data || json?.dataFattura || "",
         cliente: {
-            nome: json?.cliente?.nome || json?.cliente?.denominazione || "",
+            nome: json?.cliente?.nome || json?.cliente?.denominazione || json?.cliente?.ragioneSociale || "",
             piva: json?.cliente?.piva || json?.cliente?.partitaIva || "",
             indirizzo: json?.cliente?.indirizzo || "",
             email: json?.cliente?.email || "",

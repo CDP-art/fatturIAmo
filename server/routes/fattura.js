@@ -1,7 +1,7 @@
 // server/routes/fattura.js
 import axios from "axios";
 import { estraiDatiParziali, generaPromptFattura } from "../utils/promptBuilder.js";
-import { enforceTotals } from "../utils/enforceTotals.js";
+import { enforceTotals, normalizzaFattura } from "../utils/enforceTotals.js";
 
 export async function generaFattura(req, res) {
     try {
@@ -27,6 +27,8 @@ export async function generaFattura(req, res) {
         });
 
         let raw = g.data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+        //console.log("📦 RISPOSTA GEMINI RAW:\n", raw);
+
         let jsonText = (raw || "").trim();
         if (!jsonText.startsWith("{")) {
             const m = jsonText.match(/\{[\s\S]*\}/);
@@ -35,6 +37,7 @@ export async function generaFattura(req, res) {
         let draft;
         try {
             draft = JSON.parse(jsonText);
+            normalizzaFattura(draft); // 🛠 normalizza subito dopo il parsing
         } catch (e) {
             console.error("Parse Gemini JSON failed:", jsonText);
             return res.status(502).json({ ok: false, error: "INVALID_AI_JSON" });
@@ -53,6 +56,7 @@ export async function generaFattura(req, res) {
                     prezzo: Number(p?.prezzo ?? 0),
                 }))
                 : [];
+
 
         const draftForEnforce = { ...draft, prodotti };
 
