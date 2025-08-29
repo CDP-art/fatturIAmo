@@ -1,112 +1,141 @@
-import React from "react";
-import { useState } from "react";
-import { useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+
+// Lettura sicura da LocalStorage
+function safeGetLS(key, def = null) {
+    try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : def;
+    } catch {
+        return def;
+    }
+}
+
+// Mapping iniziale “sicuro” per evitare null negli input
+// Inizializzare i valori di default a stringa
+function buildInitialForm(invoice) {
+    const inv = invoice || {};
+
+    const cliente = inv.cliente || {};
+    const prodotti = Array.isArray(inv.prodotti) ? inv.prodotti : [];
+
+    return {
+        numeroFattura: inv.numeroFattura || inv.numero || "",
+        data: inv.data || inv.dataFattura || "",
+        clienteNome: cliente.nome || cliente.denominazione || "",
+        clientePiva: cliente.piva || "",
+        clienteIndirizzo: cliente.indirizzo || "",
+        prodotti: prodotti.map((p) => ({
+            descrizione: p?.descrizione || "",
+            quantita: Number(p?.quantita ?? p?.ore ?? 1),
+            prezzo: Number(p?.prezzo ?? p?.tariffa ?? 0),
+        })),
+        aliquotaIva: Number(inv.aliquotaIva ?? 22),
+    };
+}
 
 export default function ModificaFattura() {
     const navigate = useNavigate();
     const location = useLocation();
-    //la constate draft serve per gestire il draft della fattura
-    const draft = JSON.parse(localStorage.getItem("fatturiamo.draft") || "null");
-    //la constate invoiceData serve per gestire i dati della fattura
-    const invoiceData = location.state?.invoice || draft;
 
+    // Leggo invoice da state o da Local Storage (fallback)
+    const invoiceFromState = location.state?.invoice || null;
+    const draftFromLS = useMemo(() => safeGetLS("fatturiamo.draft", null), []);
+    const invoiceData = invoiceFromState || draftFromLS;
 
-    //con questo useEffect gestiamo il caso in cui non ci sia un draft(che è necessario per modificare una fattura)
+    // Se non ho nulla, reindirizzo
     useEffect(() => {
-        //Quindi se non c'è un draft, reindirizziamo l'utente alla pagina di generazione
-        if (!draft) {
+        if (!invoiceData) {
             navigate("/genera", { replace: true });
         }
-    }, [draft, navigate]);
+    }, [invoiceData, navigate]);
 
-    if (!draft) return null;
+    if (!invoiceData) return null;
 
-    //con questo useEffect gestiamo il caso in cui non ci sia un invoiceData(che è necessario per modificare una fattura)
-    /*  useEffect(() => {
-         if (!invoiceData) {
-             navigate("/genera", { replace: true });
-         }
-     }, [invoiceData, navigate]);
- 
-     if (!invoiceData) return null; */
+    // Stato form (tutti stringhe o numeri “safe”)
+    const [form, setForm] = useState(() => buildInitialForm(invoiceData));
 
+    // Handlers semplici
+    const setField = (key) => (e) => {
+        const value = e.target.value;
+        setForm((prev) => ({ ...prev, [key]: value }));
+    };
 
+    // Prodotti
+    function updateProdotto(index, campo, valore) {
+        setForm((prev) => {
+            const next = { ...prev, prodotti: [...prev.prodotti] };
+            const row = { ...next.prodotti[index] };
 
+            if (campo === "quantita" || campo === "prezzo") {
+                row[campo] = Number(valore);
+            } else {
+                row[campo] = valore;
+            }
 
-
-    const [numeroFattura, setNumeroFattura] = useState(invoiceData.numeroFattura);
-    const [data, setData] = useState(invoiceData.data);
-    const [clienteNome, setClienteNome] = useState(invoiceData.cliente.nome);
-    const [clientePiva, setClientePiva] = useState(invoiceData.cliente.piva);
-    const [clienteIndirizzo, setClienteIndirizzo] = useState(invoiceData.cliente.indirizzo || "");
-    const [prodotti, setProdotti] = useState(invoiceData.prodotti || []);
-    const [aliquotaIva, setAliquotaIva] = useState(22);
-
-
-    function updateProdotto(i, campo, valore) {
-        const newProdotti = [...prodotti];
-        if (campo === "ore" || campo === "prezzo" || campo === "quantita") {
-            newProdotti[i][campo] = Number(valore);
-        } else {
-            newProdotti[i][campo] = valore;
-        }
-        setProdotti(newProdotti);
+            next.prodotti[index] = row;
+            return next;
+        });
     }
 
     function aggiungiProdotto() {
-        setProdotti([
-            ...prodotti,
-            { descrizione: "", quantita: 1, prezzo: 0 },
-        ]);
+        setForm((prev) => ({
+            ...prev,
+            prodotti: [...prev.prodotti, { descrizione: "", quantita: 1, prezzo: 0 }],
+        }));
     }
 
     function eliminaProdotto(indiceDaEliminare) {
         const conferma = window.confirm("Vuoi davvero eliminare questa riga?");
         if (!conferma) return;
-
-        setProdotti((prodottiCorrenti) => {
-            const indice = Number(indiceDaEliminare);
-            if (!Array.isArray(prodottiCorrenti)) return [];
-            if (Number.isNaN(indice) || indice < 0 || indice >= prodottiCorrenti.length) return prodottiCorrenti;
-
-            const copia = [...prodottiCorrenti];
-            copia.splice(indice, 1);
-            return copia;
+        setForm((prev) => {
+            const idx = Number(indiceDaEliminare);
+            if (Number.isNaN(idx) || idx < 0 || idx >= prev.prodotti.length) return prev;
+            const next = { ...prev, prodotti: [...prev.prodotti] };
+            next.prodotti.splice(idx, 1);
+            return next;
         });
     }
 
-
-    // 6) Derivate
-    const imponibile = prodotti.reduce((acc, item) => {
-        const subtot = Number(item.quantita) * Number(item.prezzo);
-        return acc + (isNaN(subtot) ? 0 : subtot);
+    // Derivate
+    const imponibile = form.prodotti.reduce((acc, item) => {
+        const q = Number(item.quantita) || 0;
+        const p = Number(item.prezzo) || 0;
+        return acc + q * p;
     }, 0);
 
-    const iva = (imponibile * aliquotaIva) / 100;
-    const totale = (imponibile + iva).toFixed(2);
+    const iva = (imponibile * Number(form.aliquotaIva || 0)) / 100;
+    const totale = imponibile + iva;
 
-    // 7) Handler export (ora dopo gli state/derivate che usa)
+    // Export
     function handleExportFattura() {
-        if (!numeroFattura || !data || prodotti.length === 0) {
-            alert("Compila tutti i campi prima di proseguire");
+        if (!form.numeroFattura || !form.data || form.prodotti.length === 0) {
+            alert("Compila tutti i campi obbligatori prima di proseguire");
             return;
         }
 
-        navigate("/esporta", {
-            state: {
-                invoice: {
-                    numeroFattura,
-                    data,
-                    cliente: { nome: clienteNome, piva: clientePiva, indirizzo: clienteIndirizzo },
-                    prodotti,
-                    imponibile: Number(imponibile.toFixed(2)),
-                    iva: Number(iva.toFixed(2)),
-                    totale: Number(totale),
-                },
+        // Costruisco l'oggetto invoice pulito
+        const invoice = {
+            numeroFattura: form.numeroFattura,
+            data: form.data,
+            cliente: {
+                nome: form.clienteNome,
+                piva: form.clientePiva,
+                indirizzo: form.clienteIndirizzo,
             },
-            replace: true,
-        });
+            prodotti: form.prodotti,
+            imponibile: Number(imponibile.toFixed(2)),
+            iva: Number(iva.toFixed(2)),
+            totale: Number(totale.toFixed(2)),
+            aliquotaIva: Number(form.aliquotaIva),
+        };
+
+        // Salvo anche come draft aggiornato (così /esporta o refresh non perdono i dati)
+        try {
+            localStorage.setItem("fatturiamo.draft", JSON.stringify(invoice));
+        } catch { }
+
+        navigate("/esporta", { state: { invoice }, replace: true });
     }
 
     return (
@@ -122,17 +151,17 @@ export default function ModificaFattura() {
                             <label className="block text-sm font-medium mb-1">Numero Fattura</label>
                             <input
                                 type="text"
-                                value={numeroFattura}
-                                onChange={(e) => setNumeroFattura(e.target.value)}
+                                value={form.numeroFattura || ""}
+                                onChange={setField("numeroFattura")}
                                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400"
                             />
                         </div>
                         <div className="flex-1">
-                            <label className="block text-sm font-medium mb-1">Data (DD-MM-YYYY)</label>
+                            <label className="block text-sm font-medium mb-1">Data (DD/MM/YYYY)</label>
                             <input
                                 type="text"
-                                value={data}
-                                onChange={(e) => setData(e.target.value)}
+                                value={form.data || ""}
+                                onChange={setField("data")}
                                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400"
                             />
                         </div>
@@ -144,8 +173,8 @@ export default function ModificaFattura() {
                             <label className="block text-sm font-medium mb-1">Nome e Cognome</label>
                             <input
                                 type="text"
-                                value={clienteNome}
-                                onChange={(e) => setClienteNome(e.target.value)}
+                                value={form.clienteNome || ""}
+                                onChange={setField("clienteNome")}
                                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400"
                             />
                         </div>
@@ -153,8 +182,8 @@ export default function ModificaFattura() {
                             <label className="block text-sm font-medium mb-1">P.IVA</label>
                             <input
                                 type="text"
-                                value={clientePiva}
-                                onChange={(e) => setClientePiva(e.target.value)}
+                                value={form.clientePiva || ""}
+                                onChange={setField("clientePiva")}
                                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400"
                             />
                         </div>
@@ -162,8 +191,8 @@ export default function ModificaFattura() {
                             <label className="block text-sm font-medium mb-1">Indirizzo</label>
                             <input
                                 type="text"
-                                value={clienteIndirizzo}
-                                onChange={(e) => setClienteIndirizzo(e.target.value)}
+                                value={form.clienteIndirizzo || ""}
+                                onChange={setField("clienteIndirizzo")}
                                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400"
                             />
                         </div>
@@ -171,7 +200,7 @@ export default function ModificaFattura() {
 
                     <h3 className="text-xl font-semibold mb-4">Prodotti / Servizi</h3>
                     <div className="space-y-4 mb-8">
-                        {prodotti.map((item, i) => (
+                        {form.prodotti.map((item, i) => (
                             <div key={i} className="flex gap-2 items-center justify-center">
                                 <div className="p-3 border border-gray-200 rounded-lg bg-white w-full">
                                     <div className="flex flex-col gap-3">
@@ -179,7 +208,7 @@ export default function ModificaFattura() {
                                             <label className="block text-sm mb-1">Descrizione</label>
                                             <textarea
                                                 rows={2}
-                                                value={item.descrizione}
+                                                value={item.descrizione || ""}
                                                 onChange={(e) => updateProdotto(i, "descrizione", e.target.value)}
                                                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400"
                                             />
@@ -189,7 +218,7 @@ export default function ModificaFattura() {
                                                 <label className="block text-sm mb-1">Quantità</label>
                                                 <input
                                                     type="number"
-                                                    value={item.quantita}
+                                                    value={Number.isFinite(item.quantita) ? item.quantita : 0}
                                                     onChange={(e) => updateProdotto(i, "quantita", e.target.value)}
                                                     className="w-full p-2 border border-gray-300 rounded-lg text-right focus:ring-2 focus:ring-blue-400"
                                                 />
@@ -199,7 +228,7 @@ export default function ModificaFattura() {
                                                 <input
                                                     type="number"
                                                     step="0.01"
-                                                    value={item.prezzo}
+                                                    value={Number.isFinite(item.prezzo) ? item.prezzo : 0}
                                                     onChange={(e) => updateProdotto(i, "prezzo", e.target.value)}
                                                     className="w-full p-2 border border-gray-300 rounded-lg text-right focus:ring-2 focus:ring-blue-400"
                                                 />
@@ -225,13 +254,18 @@ export default function ModificaFattura() {
                                 </div>
                             </div>
                         ))}
+                        {form.prodotti.length === 0 && (
+                            <div className="text-sm text-gray-600">
+                                Nessuna riga presente. Aggiungi un prodotto/servizio con il pulsante “+”.
+                            </div>
+                        )}
                     </div>
 
                     <div className="mb-6 flex flex-col items-end">
                         <label className="block text-sm font-bold mb-1">Aliquota IVA</label>
                         <select
-                            value={aliquotaIva}
-                            onChange={(e) => setAliquotaIva(Number(e.target.value))}
+                            value={Number(form.aliquotaIva)}
+                            onChange={(e) => setForm((prev) => ({ ...prev, aliquotaIva: Number(e.target.value) }))}
                             className="w-32 px-4 py-1 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-blue-400"
                         >
                             <option value={0}>0%</option>
@@ -242,7 +276,7 @@ export default function ModificaFattura() {
                     </div>
 
                     <div className="text-right text-xl font-semibold text-purple-600">
-                        Totale: € {totale}
+                        Totale: € {totale.toFixed(2)}
                     </div>
                 </div>
 

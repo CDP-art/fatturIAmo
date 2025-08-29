@@ -10,15 +10,51 @@ export async function generaFattura(req, res) {
         const parziali = await estraiDatiParziali(promptOriginale);
         const prompt = generaPromptFattura(parziali, promptOriginale, supplier);
 
-        const g = await axios.post(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-            { contents: [{ parts: [{ text: prompt }] }] },
-            { headers: { "Content-Type": "application/json" } }
-        );
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
+
+        const payload = {
+            contents: [{ role: "user", parts: [{ text: prompt }] }],
+            generationConfig: {
+                response_mime_type: "application/json",
+                temperature: 0.1,
+                maxOutputTokens: 800,
+            },
+        };
+
+        const g = await axios.post(url, payload, {
+            headers: { "Content-Type": "application/json" },
+            timeout: 15000,
+        });
 
         let raw = g.data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-        raw = raw.replace(/```json\n?/gi, "").replace(/```/g, "").trim();
-        const draft = JSON.parse(raw);
+        let jsonText = (raw || "").trim();
+        if (!jsonText.startsWith("{")) {
+            const m = jsonText.match(/\{[\s\S]*\}/);
+            jsonText = m ? m[0] : "{}";
+        }
+        let draft;
+        try {
+            draft = JSON.parse(jsonText);
+        } catch (e) {
+            console.error("Parse Gemini JSON failed:", jsonText);
+            return res.status(502).json({ ok: false, error: "INVALID_AI_JSON" });
+        }
+
+        const prodotti = Array.isArray(draft?.righe) ? draft.righe.map(
+            r => ({
+                descrizione: r?.descrizione || "",
+                quantita: Number(r?.ore ?? r?.quantita ?? 0),
+                prezzo: Number(r?.tariffaOraria ?? r?.prezzo ?? 0),
+            }))
+            : Array.isArray(draft?.prodotti) ? draft.prodotti.map(
+                p => ({
+                    descrizione: p?.descrizione || "",
+                    quantita: Number(p?.quantita ?? 0),
+                    prezzo: Number(p?.prezzo ?? 0),
+                }))
+                : [];
+
+        const draftForEnforce = { ...draft, prodotti };
 
         //Dobbiamo calcolare il totale richiesto
         // Se l'IVA è inclusa e l'importo totale è fornito, lo utilizziamo
@@ -33,7 +69,9 @@ export async function generaFattura(req, res) {
         }
 
 
-        const normalized = enforceTotals(draft, requestedTotal, 22);
+        const aliquota = Number(draft?.opzioni?.aliquotaIvaPct ?? 22);
+        const normalized = enforceTotals(draftForEnforce, requestedTotal, aliquota);
+
         return res.json({ ok: true, data: normalized });
     } catch (err) {
         console.error("GENERA:", err?.response?.data || err.message);
