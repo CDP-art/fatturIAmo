@@ -119,39 +119,19 @@ export default function EsportaFatturaPDF() {
 
 // --- Funzione principale che disegna il PDF ---
 function generateInvoicePDF(invoice) {
-    //supplier serve per recuperare i dati del fornitore
     const supplier = safeGetLS("fatturiamo.supplier", null);
-    //numero serve per identificare univocamente la fattura (numero fattura)
+
     const numero = invoice?.numeroFattura || invoice?.numero || "N/D";
-    //dataFattura è la data scritta dal fornitore o (se manca) la data odierna
     const dataFattura = invoice?.data || invoice?.dataFattura || new Date().toLocaleDateString("it-IT");
-    //cliente serve per recuperare i dati del cliente
     const cliente = invoice?.cliente || {};
-    //righe serve per recuperare i prodotti/servizi della fattura(ogni servizio, una riga)
-    //uso Array.isArray perchè in caso contrario si rischia di avere un oggetto invece di un array
     const righe = Array.isArray(invoice?.prodotti) ? invoice.prodotti : [];
-    /*
-    let righe;
-    if (Array.isArray(invoice?.prodotti)) {
-        righe = invoice.prodotti;
-    } else {
-        righe = [];
-    }
-    */
 
-    // Calcolo dei totali
+    // Totali
     const imponibile = Number(invoice?.imponibile || 0);
-    // IVA
     const iva = Number(invoice?.iva || 0);
-    //calcolo del totale
     const totale = invoice?.totale != null ? Number(invoice.totale) : imponibile + iva;
-    /* let totale;
-    if (invoice?.totale != null) {
-        totale = Number(invoice.totale);
-    }else{
-        totale = imponibile + iva;
-    } */
 
+    // Altri dati
     const terminiPagamento = invoice?.terminiPagamento || "Pagamento a 30 giorni data fattura";
     const metodoPagamento = invoice?.metodoPagamento || "Bonifico bancario";
     const iban = supplier?.iban || invoice?.iban || "";
@@ -162,7 +142,7 @@ function generateInvoicePDF(invoice) {
 
     const doc = new jsPDF({ unit: "pt", format: "a4" });
 
-    // Inizio disegno PDF
+    // Disegno intestazioni e contenuti
     drawHeader(doc, { numero, dataFattura }, supplier);
 
     let cursorY = 140;
@@ -180,7 +160,21 @@ function generateInvoicePDF(invoice) {
         regimeFiscale,
     }, cursorY);
     cursorY = drawItemsTable(doc, righe, cursorY);
-    cursorY = drawTotals(doc, { imponibile, iva, totale }, cursorY);
+    cursorY = drawTotals(doc, {
+        imponibile,
+        iva,
+        totale,
+        aliquotaIva: invoice?.aliquotaIva || 0
+    }, cursorY);
+
+    // Calcolo posizionamento basso per la sezione "dati pagamento"
+    const tableEndY = cursorY;
+    const paySectionHeight = 60;
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const marginAboveFooter = 100;
+    const paySectionY = Math.max(tableEndY + 20, pageHeight - marginAboveFooter - paySectionHeight);
+
+    drawPayToSection(doc, supplier, paySectionY);
     drawFooter(doc, supplier);
 
     const clienteNome = (cliente?.nome || cliente?.denominazione || "cliente")
@@ -190,6 +184,7 @@ function generateInvoicePDF(invoice) {
     const filename = `Fattura_${numero}_${clienteNome}.pdf`;
     doc.save(filename);
 }
+
 
 
 // --- Header ---
@@ -210,19 +205,19 @@ function drawHeader(doc, { numero, dataFattura }, supplier) {
     const rightX = pageWidth - MARGIN.right;
     const topY = MARGIN.top + 8;
 
-    doc.setFontSize(18);
+    doc.setFontSize(22);
     doc.setFont(undefined, "bold");
     doc.setTextColor(20);
     doc.text(supplier?.ragioneSociale || "Nome Azienda", rightX, topY + 4, { align: "right" });
 
-    doc.setFontSize(12);
+    doc.setFontSize(14);
     doc.setFont(undefined, "normal");
     doc.setTextColor(80);
     doc.text(`Fattura n. ${numero}`, rightX, topY + 24, { align: "right" });
     doc.text(`Data: ${dataFattura}`, rightX, topY + 40, { align: "right" });
 
     // Linea separatrice
-    const lineY = topY + 52;
+    const lineY = MARGIN.top + logoSize + 12;
     doc.setDrawColor(180);
     doc.setLineWidth(0.5);
     doc.line(MARGIN.left, lineY, rightX, lineY);
@@ -239,17 +234,32 @@ function drawSupplierBox(doc, supplier, startY) {
 function drawClientBox(doc, cliente, startY, dataFattura) {
     let y = Math.max(startY + 20, 120); // aggiungo un po’ di margine sopra
 
-    // Etichetta
-    doc.setFontSize(10);
+    // Data della fattura (sotto i dati cliente)
+    doc.setFontSize(20);
     doc.setFont(undefined, "bold");
-    doc.setTextColor(...COLORS.gray);
+    doc.setTextColor(30, 30, 30);
+    doc.text("DATA:", MARGIN.left, y);
+    doc.setFontSize(12);
+    doc.setFont(undefined, "normal");
+    doc.setTextColor(20);
+    doc.text(String(dataFattura), MARGIN.left + 70, y); // leggermente spostata a destra
+
+    y += 40;
+
+
+    // Etichetta
+    doc.setFontSize(20);
+    doc.setFont(undefined, "bold");
+    doc.setTextColor(30, 30, 30);
     doc.text("FATTURATO A:", MARGIN.left, y);
 
     // Dati cliente
-    y += 14;
+    y += 18; // un po’ più spazio se il titolo è grande
+    doc.setFontSize(12); // ← ripristina dimensione
     doc.setFont(undefined, "normal");
     doc.setTextColor(20);
 
+    // Dati cliente
     const clienteLines = [
         cliente?.nome || cliente?.denominazione || "",
         cliente?.indirizzo || "",
@@ -265,16 +275,8 @@ function drawClientBox(doc, cliente, startY, dataFattura) {
 
     y += clienteLines.length * 12 + 16;
 
-    // Data della fattura (sotto i dati cliente)
-    doc.setFont(undefined, "bold");
-    doc.setTextColor(...COLORS.gray);
-    doc.text("DATA:", MARGIN.left, y);
-
-    doc.setFont(undefined, "normal");
-    doc.setTextColor(20);
-    doc.text(String(dataFattura), MARGIN.left + 42, y); // leggermente spostata a destra
-
     return y + 20; // restituisco la nuova Y per continuare il flusso
+
 }
 
 
@@ -305,14 +307,14 @@ function drawItemsTable(doc, righe, startY) {
         ];
     });
 
-    autoTable(doc, {
+    const table = autoTable(doc, {
         startY: startY + 10,
         head,
         body,
         theme: "grid",
         margin: { left: MARGIN.left, right: MARGIN.right },
         styles: {
-            fontSize: 10,
+            fontSize: 12,
             textColor: [20, 20, 20],
             lineWidth: 0.5,
             lineColor: [180, 180, 180],
@@ -325,10 +327,10 @@ function drawItemsTable(doc, righe, startY) {
             halign: "center",
         },
         columnStyles: {
-            0: { cellWidth: 240, halign: "left" },   // descrizione
-            1: { cellWidth: 90, halign: "right" },   // tariffa
-            2: { cellWidth: 60, halign: "right" },   // ore
-            3: { cellWidth: 90, halign: "right" },   // importo
+            0: { cellWidth: 240, halign: "left" },
+            1: { cellWidth: 90, halign: "right" },
+            2: { cellWidth: 60, halign: "right" },
+            3: { cellWidth: 90, halign: "right" },
         },
     });
 
@@ -345,6 +347,7 @@ function invoiceGuessAliquota(riga) {
 
 // --- Totali ---
 function drawTotals(doc, totals, startY) {
+    const { imponibile, iva, totale, aliquotaIva } = totals;
     const W = doc.internal.pageSize.getWidth();
     const xRight = W - MARGIN.right;
     let y = startY + 8;
@@ -364,13 +367,11 @@ function drawTotals(doc, totals, startY) {
     y += 16;
 
     // IVA (se presente)
-    if (Number(totals.iva) > 0) {
-        doc.setFont(undefined, "normal");
-        doc.text("IVA", xRight - 120, y, { align: "left" });
-        doc.setFont(undefined, "bold");
-        doc.text(formatEuro(totals.iva), xRight, y, { align: "right" });
-        y += 16;
-    }
+    doc.setFont(undefined, "normal");
+    doc.text(`IVA (${aliquotaIva}%)`, xRight - 120, y, { align: "left" });
+    doc.setFont(undefined, "bold");
+    doc.text(formatEuro(totals.iva), xRight, y, { align: "right" });
+    y += 16;
 
     // Linea separatrice
     doc.setDrawColor(200);
@@ -387,8 +388,9 @@ function drawTotals(doc, totals, startY) {
     return y + 10;
 }
 
+// --- Sezione dati pagamento ---
 function drawPayToSection(doc, supplier, startY) {
-    let y = startY + 30;
+    let y = startY;
 
     const lines = [];
 
@@ -411,32 +413,28 @@ function drawPayToSection(doc, supplier, startY) {
     }
 
     // Titolo sezione
-    doc.setFontSize(10);
+    doc.setFontSize(16);
     doc.setFont(undefined, "bold");
-    doc.setTextColor(...COLORS.gray);
+    doc.setTextColor(30, 30, 30);
     doc.text("DATI PER IL PAGAMENTO", MARGIN.left, y);
 
-    y += 16;
-
-    // Dati di pagamento
+    y += 16; // margine dopo il titolo
+    doc.setFontSize(10); // torna a 10 o la dimensione passata prima
     doc.setFont(undefined, "normal");
     doc.setTextColor(0);
 
+    // Linee successive
     lines.forEach((line, i) => {
         doc.text(line, MARGIN.left, y + i * 14);
     });
 
-    return y + lines.length * 14 + 10;
 }
 
-
-// --- Footer con pagina e nota ---
 function drawFooter(doc, supplier) {
     const pageCount = doc.getNumberOfPages();
     const W = doc.internal.pageSize.getWidth();
     const H = doc.internal.pageSize.getHeight();
 
-    // Dati fornitore da mostrare centrati
     const footerLines = [
         supplier?.ragioneSociale || "",
         supplier?.indirizzo || "",
@@ -448,24 +446,28 @@ function drawFooter(doc, supplier) {
     for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
 
-        const footerY = H - MARGIN.bottom;
-
+        const footerY = H - 60;
         // Linea divisoria sopra il footer
         doc.setDrawColor(200);
         doc.line(MARGIN.left, footerY - 28, W - MARGIN.right, footerY - 28);
 
-        // Testo footer centrato
+        // Footer in una riga con spazi orizzontali
         doc.setFontSize(9);
         doc.setTextColor(80);
         doc.setFont(undefined, "normal");
 
+        const totalWidth = W - MARGIN.left - MARGIN.right;
+        const spacing = totalWidth / (footerLines.length + 1); // +1 per spazio iniziale
+
         footerLines.forEach((line, index) => {
-            doc.text(line, W / 2, footerY - 12 + index * 12, { align: "center" });
+            const x = MARGIN.left + spacing * (index + 1);
+            doc.text(line, x, footerY - 12, { align: "center" });
         });
 
-        // Numero pagina (in basso a destra)
+        // Numero pagina in basso a destra
         const pageLabel = `Pagina ${i} di ${pageCount}`;
         doc.text(pageLabel, W - MARGIN.right, H - 10, { align: "right" });
     }
 }
+
 
