@@ -72,18 +72,18 @@ export default function DatiFornitore({ innerRef, titolo, supplier, onChange, on
 
                         <div className="mt-6 flex flex-col sm:flex-row gap-3">
                             <button
-                                onClick={onContinue}
-                                disabled={!canContinue}
-                                className="px-5 py-3 rounded-2xl text-white bg-purple-600 disabled:opacity-40"
-                            >
-                                Salva e continua
-                            </button>
-                            <button
                                 type="button"
                                 onClick={onReset}
                                 className="px-5 py-3 rounded-2xl border"
                             >
                                 Reset campi
+                            </button>
+                            <button
+                                onClick={onContinue}
+                                disabled={!canContinue}
+                                className="px-5 py-3 rounded-2xl text-white bg-purple-600 disabled:opacity-40"
+                            >
+                                Salva e continua
                             </button>
                         </div>
                     </div>

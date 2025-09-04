@@ -228,8 +228,13 @@ export default function ModificaFattura() {
                                                 <input
                                                     type="number"
                                                     step="0.01"
-                                                    value={Number.isFinite(item.prezzo) ? item.prezzo : 0}
-                                                    onChange={(e) => updateProdotto(i, "prezzo", e.target.value)}
+                                                    value={Number(item.prezzo) || 0}
+                                                    onChange={(e) => {
+                                                        const raw = e.target.value;
+                                                        const clean = raw.replace(/^0+(?=\d)/, ""); // rimuove zeri iniziali
+                                                        updateProdotto(i, "prezzo", clean);
+                                                    }}
+
                                                     className="w-full p-2 border border-gray-300 rounded-lg text-right focus:ring-2 focus:ring-blue-400"
                                                 />
                                             </div>
@@ -276,7 +281,10 @@ export default function ModificaFattura() {
                     </div>
 
                     <div className="text-right text-xl font-semibold text-purple-600">
-                        Totale: € {totale.toFixed(2)}
+                        Totale: € {totale.toLocaleString("it-IT", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                        })}
                     </div>
                 </div>
 

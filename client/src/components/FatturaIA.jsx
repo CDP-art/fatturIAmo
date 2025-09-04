@@ -1,23 +1,41 @@
 export default function FatturaIA({ rawOutput }) {
     let parsed;
     try {
-        parsed = typeof rawOutput === "string" ? JSON.parse(rawOutput) : rawOutput;
+        const raw = typeof rawOutput === "string" ? JSON.parse(rawOutput) : rawOutput;
+        console.log("RAW OUTPUT:", rawOutput);
+        parsed = typeof raw.data === "object" && raw.data !== null ? raw.data : raw;
+        console.log("PARSED:", parsed);
     } catch {
         return <div>⚠️ Errore: JSON non valido.</div>;
     }
+
+
+
 
     const {
         numeroFattura,
         data,
         cliente,
         fornitore,
-        prodotti = [],
+        prodotti: prodottiRaw,
+        righe: righeRaw,
         aliquotaIva = 22,
         imponibile: impJSON,
         iva: ivaJSON,
         totale: totJSON,
     } = parsed || {};
-    console.log("FatturaIA: parsed =", parsed);
+
+    let prodotti = [];
+    if (Array.isArray(parsed?.prodotti) && parsed.prodotti.length > 0) {
+        prodotti = parsed.prodotti;
+    } else if (Array.isArray(parsed?.righe) && parsed.righe.length > 0) {
+        prodotti = parsed.righe;
+    }
+
+    console.log("PRODOTTI RAW:", prodottiRaw);
+    console.log("RIGHE RAW:", righeRaw);
+    console.log("➡️  Prodotti finali:", prodotti);
+
 
     // --- funzioni BASILARI di supporto ---
     // Trasforma "500", "500,00", "€500,00" -> 500
@@ -44,27 +62,19 @@ export default function FatturaIA({ rawOutput }) {
             "—";
 
     // --- normalizzo le righe ---
-    const righe = prodotti.map((p) => {
+    const righe = prodotti.map((p, i) => {
+        const descrizione = p.descrizione || p.nome || p.titolo || `Voce ${i + 1}`;
         const quantita = toNum(p.quantita ?? p.qty ?? p.ore ?? 1);
-        let prezzo = toNum(p.prezzo ?? p.prezzoUnitario ?? p.prezzoOrario);
-        let totaleRiga = toNum(p.totale ?? p.importo ?? p.subtotal);
+        const prezzo = toNum(p.prezzo ?? p.tariffaOraria ?? p.prezzoUnitario ?? p.prezzoOrario);
+        const totaleRiga = toNum(p.totaleRiga ?? prezzo * quantita);
 
-        // se manca il prezzo ma ho il totale, lo ricavo
-        if (!prezzo && totaleRiga && quantita) {
-            prezzo = totaleRiga / quantita;
-        }
-        // se manca il totale, lo calcolo
-        if ((!totaleRiga || totaleRiga === 0) && prezzo && quantita) {
-            totaleRiga = quantita * prezzo;
-        }
+        const rigaFinale = { descrizione, quantita, prezzo, totaleRiga };
 
-        return {
-            descrizione: p.descrizione || p.nome || p.titolo || "",
-            quantita,
-            prezzo,
-            totaleRiga,
-        };
+        console.log(`🧾 Riga ${i + 1}:`, rigaFinale);
+
+        return rigaFinale;
     });
+
 
     // --- calcoli totali ---
     const imponibileCalc = righe.reduce((s, r) => s + r.totaleRiga, 0);
@@ -112,26 +122,49 @@ export default function FatturaIA({ rawOutput }) {
                     </tr>
                 </thead>
                 <tbody>
-                    {righe.map((r, i) => (
-                        <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                            <td className="p-2">{r.descrizione}</td>
-                            <td className="p-2 text-right">{r.quantita}</td>
-                            <td className="p-2 text-right">{r.prezzo.toFixed(2)}</td>
-                            <td className="p-2 text-right bg-purple-100 font-medium">
-                                {r.totaleRiga.toFixed(2)}
-                            </td>
-                        </tr>
-                    ))}
+                    {righe.map((r, i) => {
+                        const totalToShow = Number(
+                            r.totaleRiga && r.totaleRiga > 0 ? r.totaleRiga : r.quantita * r.prezzo
+                        );
+
+                        return (
+                            <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                                <td className="p-2">{r.descrizione}</td>
+                                <td className="p-2 text-right">{r.quantita}</td>
+                                <td className="p-2 text-right">
+                                    {r.prezzo.toLocaleString("it-IT", {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2,
+                                    })}
+                                </td>
+                                <td className="p-2 text-right bg-purple-100 font-medium">
+                                    {totalToShow.toLocaleString("it-IT", {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2,
+                                    })}
+                                </td>
+                            </tr>
+                        );
+                    })}
                 </tbody>
             </table>
 
             <hr className="mt-10 mb-4 border-t border-gray-200" />
 
             <div className="text-sm text-right text-gray-600">
-                Imponibile: {imponibile.toFixed(2)} € – IVA: {iva.toFixed(2)} €
+                Imponibile: {imponibile.toLocaleString} € – IVA: {iva.toLocaleString("it-IT", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                })} € – IVA: {iva.toLocaleString("it-IT", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                })} €
             </div>
             <div className="text-right text-lg font-bold text-purple-700 mt-2">
-                Totale: {totale.toFixed(2)} €
+                Totale: {totale.toLocaleString("it-IT", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                })} €
             </div>
 
             <div className="mt-6 text-xs">

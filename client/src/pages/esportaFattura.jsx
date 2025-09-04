@@ -312,7 +312,8 @@ function drawItemsTable(doc, righe, startY) {
         head,
         body,
         theme: "grid",
-        margin: { left: MARGIN.left, right: MARGIN.right },
+        margin: "auto", // centra la tabella
+        tableWidth: "auto", // larghezza automatica in base al contenuto
         styles: {
             fontSize: 12,
             textColor: [20, 20, 20],
@@ -327,10 +328,10 @@ function drawItemsTable(doc, righe, startY) {
             halign: "center",
         },
         columnStyles: {
-            0: { cellWidth: 240, halign: "left" },
-            1: { cellWidth: 90, halign: "right" },
-            2: { cellWidth: 60, halign: "right" },
-            3: { cellWidth: 90, halign: "right" },
+            0: { halign: "left" },
+            1: { halign: "right" },
+            2: { halign: "right" },
+            3: { halign: "right" },
         },
     });
 

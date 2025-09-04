@@ -58,7 +58,7 @@ REGOLE:
 - Se mancano dati di cliente/fornitore, usa nomi e indirizzi plausibili.
 - Usa UNA SOLA riga se l'utente non specifica più voci.
 - NON calcolare totali o IVA. Il server si occupa dei calcoli.
-- Usa numeri veri (non stringhe) e il punto per i decimali.
+- Usa numeri veri (non stringhe) e la virgola per i decimali e il punto per le migliaia.
 - Usa formato data DD/MM/YYYY se presente, altrimenti ometti il campo.
 - Se un campo è sconosciuto, NON includerlo nel JSON (non usare null o 0).
 - Restituisci SOLO i campi utili secondo lo schema seguente.
@@ -80,8 +80,8 @@ SCHEMA RICHIESTO:
   "righe": [
     {
       "descrizione": string,
-      "ore": number?,
-      "tariffaOraria": number?,
+      "ore": number,
+      "tariffaOraria": number,
       "scontoPct": number?
     }
   ],
@@ -95,12 +95,26 @@ SCHEMA RICHIESTO:
 }
 
 ISTRUZIONI:
-- Se l'utente usa "quantità" per intendere ore, converti in "ore".
-- Se è indicato un importo con IVA inclusa, metti quel valore in "vincoli.totaleLordo".
-- "scontoPct": ometti se non menzionato.
-- Se è presente un importo ma mancano righe e/o servizi, crea almeno una riga.
-  Se mancano ore/tariffaOraria, oppure quantità/prezzo, imposta: quantità = 1, prezzo = importo (IVA esclusa).
-- Se mancano "ore" e "tariffaOraria", ma esiste "totaleLordo", imposta ore = 1 e tariffaOraria = totaleLordo.
+- Ogni riga DEVE avere sia "ore" che "tariffaOraria". Se uno dei due manca, deducilo o imposta "ore": 1.
+- Non mettere ore = 0 o tariffaOraria = 0, a meno che sia chiaramente gratuito.
+- Se l'importo è espresso come "500 euro", e non è chiaro quante ore, metti "ore": 1, "tariffaOraria": 500.
+- Se l’utente usa “quantità + prezzo”, converti in “ore + tariffaOraria”.
+- Non includere righe incomplete: tutte le righe devono poter essere moltiplicate (ore × tariffa).
+- Se l’utente specifica importi (es. 500 euro), questi devono essere usati esattamente come "tariffaOraria" o "prezzo".
+- Non ignorare nessun prezzo presente nel testo.
+- Se l’utente scrive "posa piastrelle 20 euro/h per 8 ore", genera:
+  { descrizione: "posa piastrelle", ore: 8, tariffaOraria: 20 }
+
+- Se l’utente scrive "piastrelle 20 euro/mq per 45 mq", genera:
+  { descrizione: "piastrelle", ore: 45, tariffaOraria: 20 }
+
+- Se l’utente scrive "manodopera 500 euro", genera:
+  { descrizione: "manodopera", ore: 1, tariffaOraria: 500 }
+
+NON omettere i prezzi presenti nel testo. Tutti i prezzi devono apparire nel JSON.
+- Se l’utente specifica "totale 1500 euro IVA inclusa", metti "vincoli": { "totaleLordo": 1500 }.
+- Se l’utente specifica "totale 1500 euro IVA esclusa", ometti "totaleLordo" (il server calcola l’IVA).
+- Se l’utente specifica "aliquota IVA 10%", usa questo valore in "opzioni.aliquotaIvaPct".
 
 
 ---
@@ -112,3 +126,4 @@ Prompt utente:
 ${JSON.stringify(promptOriginale)}
   `.trim();
 }
+

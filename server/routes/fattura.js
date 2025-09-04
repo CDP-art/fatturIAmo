@@ -6,6 +6,7 @@ import { enforceTotals, normalizzaFattura } from "../utils/enforceTotals.js";
 export async function generaFattura(req, res) {
     try {
         const { prompt: promptOriginale, supplier } = req.body;
+        console.log("REQUEST BODY:", req.body);
 
         const parziali = await estraiDatiParziali(promptOriginale);
         const prompt = generaPromptFattura(parziali, promptOriginale, supplier);
@@ -27,7 +28,7 @@ export async function generaFattura(req, res) {
         });
 
         let raw = g.data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-        //console.log("📦 RISPOSTA GEMINI RAW:\n", raw);
+        console.log("📦 RISPOSTA GEMINI RAW:\n", raw);
 
         let jsonText = (raw || "").trim();
         if (!jsonText.startsWith("{")) {
@@ -37,25 +38,41 @@ export async function generaFattura(req, res) {
         let draft;
         try {
             draft = JSON.parse(jsonText);
-            normalizzaFattura(draft); // 🛠 normalizza subito dopo il parsing
+            normalizzaFattura(draft);
+            console.log("✅ RIGHE AI:", draft?.righe);
         } catch (e) {
             console.error("Parse Gemini JSON failed:", jsonText);
             return res.status(502).json({ ok: false, error: "INVALID_AI_JSON" });
         }
 
-        const prodotti = Array.isArray(draft?.righe) ? draft.righe.map(
-            r => ({
-                descrizione: r?.descrizione || "",
-                quantita: Number(r?.ore ?? r?.quantita ?? 0),
-                prezzo: Number(r?.tariffaOraria ?? r?.prezzo ?? 0),
-            }))
-            : Array.isArray(draft?.prodotti) ? draft.prodotti.map(
-                p => ({
-                    descrizione: p?.descrizione || "",
-                    quantita: Number(p?.quantita ?? 0),
-                    prezzo: Number(p?.prezzo ?? 0),
-                }))
-                : [];
+        const parsePrezzo = (val) => {
+            if (typeof val === 'string') {
+                // Rimuove spazi, simboli e converte "1.000,50" → "1000.50"
+                const cleaned = val
+                    .replace(/\./g, '')      // rimuove punto (migliaia)
+                    .replace(',', '.')       // converte virgola in punto (decimale)
+                    .replace(/[^\d.]/g, ''); // rimuove tutto tranne cifre e punto
+                return Number(cleaned);
+            }
+            return Number(val ?? 0);
+        };
+
+
+
+        let prodotti = [];
+
+        if (Array.isArray(draft?.righe)) {
+            prodotti = draft.righe.map((r, i) => {
+                const descrizione = r?.descrizione || `Voce ${i + 1}`;
+                const quantita = Number(r?.ore ?? r?.quantita ?? 1);
+                const prezzo = parsePrezzo(r.prezzo ?? r.tariffaOraria ?? r.prezzoUnitario ?? r.prezzoOrario);
+                const totaleRiga = quantita * prezzo;
+
+                return { descrizione, quantita, prezzo, totaleRiga };
+            });
+        }
+
+
 
 
         const draftForEnforce = { ...draft, prodotti };
@@ -72,11 +89,17 @@ export async function generaFattura(req, res) {
             requestedTotal = Number(parziali.importoTotale); // allora requestedTotal = importoTotale 
         }
 
-
         const aliquota = Number(draft?.opzioni?.aliquotaIvaPct ?? 22);
         const normalized = enforceTotals(draftForEnforce, requestedTotal, aliquota);
+        // Assicura che i prodotti normalizzati siano nel campo "prodotti"
+        normalized.prodotti = normalized.prodotti || normalized.righe || [];
+        normalized.righe = normalized.prodotti;
+
+
+        console.log("✅ RIGHE NORMALIZZATE:", normalized?.prodotti);
 
         return res.json({ ok: true, data: normalized });
+
     } catch (err) {
         console.error("GENERA:", err?.response?.data || err.message);
         res.status(500).json({ ok: false, error: "GENERATION_FAILED" });

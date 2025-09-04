@@ -53,19 +53,19 @@ export default function Fornitore() {
     };
 
     // Caricamento immagine (solo PNG/JPG, nessun limite di dimensione impostato qui)
-    /*   const onLogoChange = (e) => {
-          const file = e.target.files?.[0];
-          if (!file) return;
-          if (!/image\/(png|jpeg)/.test(file.type)) {
-              alert("Formato non supportato. Usa PNG o JPG.");
-              return;
-          }
-          const reader = new FileReader();
-          reader.onload = () => {
-              saveSupplier({ ...supplier, logoDataUrl: reader.result });
-          };
-          reader.readAsDataURL(file);
-      }; */
+    const onLogoChange = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        if (!/image\/(png|jpeg)/.test(file.type)) {
+            alert("Formato non supportato. Usa PNG o JPG.");
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => {
+            saveSupplier({ ...supplier, logoDataUrl: reader.result });
+        };
+        reader.readAsDataURL(file);
+    };
 
     const canContinue = supplier?.ragioneSociale?.trim().length > 0;
 
@@ -82,8 +82,6 @@ export default function Fornitore() {
 
     return (
         <div className="min-h-screen text-gray-800 bg-gradient-to-br from-blue-100 via-indigo-100 to-purple-100 animate-gradient">
-
-
 
             {/* Navigazione step (semplice) */}
             <div className="fixed top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2">
@@ -110,10 +108,8 @@ export default function Fornitore() {
                 logoUrl={supplier?.logoDataUrl}
                 placeholderTxt="Anteprima"
                 proseguiClick={() => scrollToRef(sec3Ref)}
+                onLogoChange={onLogoChange}
             ></CaricamentoLogoFornitore>
-
-
-
 
             {/* SEZIONE 3: Dati azienda (100vh) */}
             {supplier && (
