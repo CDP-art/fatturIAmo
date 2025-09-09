@@ -16,7 +16,7 @@ export default function Home() {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-300 via-white to-purple-400 flex flex-col items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-300 via-white to-purple-400 bg-animated-gradient flex flex-col items-center justify-center px-4">
       <div className="max-w-2xl text-center">
         <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-6">
           Crea fatture con l’aiuto dell’
@@ -27,9 +27,10 @@ export default function Home() {
             Fattur<span className="text-purple-600">IA</span>mo
           </strong> fa il resto, in pochi secondi.
         </p>
-        <button onClick={handleStart} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl shadow-md transition">
+        <button onClick={handleStart} className="w-full sm:w-auto min-h-[48px] px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-2xl shadow-lg transition-all duration-300 active:scale-95">
           Inizia ora
         </button>
+
       </div>
     </div>
   );

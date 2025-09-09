@@ -54,13 +54,14 @@ export default function OutputButtons({ onReset, onEdit }) {
                     whileHover={{ scale: 1.03 }}
                     whileTap={{ scale: 0.97 }}
                     transition={{ duration: 0.2, ease: "easeOut" }}
-                    className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold shadow-md
-    ${btn.danger
-                            ? "text-red-500 border border-red-300 hover:bg-red-100"
+                    className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold shadow-md transition-all active:scale-95
+  ${btn.danger
+                            ? "text-red-600 border border-red-300 hover:bg-red-50"
                             : btn.primary
                                 ? "bg-purple-600 text-white hover:bg-purple-700"
-                                : "border border-gray-300 hover:bg-gray-100"
+                                : "text-gray-800 border border-gray-300 hover:bg-gray-100"
                         }`}
+
                 >
                     {btn.icon}
                     {btn.text}

@@ -99,10 +99,10 @@ export default function EsportaFatturaPDF() {
     return (
         <>
             <div className="relative h-screen w-full bg-gradient-to-br from-blue-300 via-white to-purple-300">
-                <div className="absolute inset-0 bg-black/5 backdrop-blur-sm z-0" />
+                <div className="absolute inset-0 bg-black/10 backdrop-blur-sm z-0" />
                 <div className="relative z-10 flex flex-col items-center justify-center h-full px-10 py-10">
                     <h1 className="text-2xl sm:text-3xl font-bold text-center mb-10">Esporta la fattura</h1>
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-10">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 justify-center items-start fade-in">
                         <EsportazioneCard descrizioneCard="Crea un PDF formale con tutti i dati obbligatori di fornitore e cliente.">
                             <EsportazioneButtons action={handleGeneratePDF} testoBottone="Esporta in PDF" />
                         </EsportazioneCard>

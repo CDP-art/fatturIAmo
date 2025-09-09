@@ -2,23 +2,16 @@ export default function FatturaIA({ rawOutput }) {
     let parsed;
     try {
         const raw = typeof rawOutput === "string" ? JSON.parse(rawOutput) : rawOutput;
-        console.log("RAW OUTPUT:", rawOutput);
         parsed = typeof raw.data === "object" && raw.data !== null ? raw.data : raw;
-        console.log("PARSED:", parsed);
     } catch {
         return <div>⚠️ Errore: JSON non valido.</div>;
     }
-
-
-
 
     const {
         numeroFattura,
         data,
         cliente,
         fornitore,
-        prodotti: prodottiRaw,
-        righe: righeRaw,
         aliquotaIva = 22,
         imponibile: impJSON,
         iva: ivaJSON,
@@ -31,10 +24,6 @@ export default function FatturaIA({ rawOutput }) {
     } else if (Array.isArray(parsed?.righe) && parsed.righe.length > 0) {
         prodotti = parsed.righe;
     }
-
-    console.log("PRODOTTI RAW:", prodottiRaw);
-    console.log("RIGHE RAW:", righeRaw);
-    console.log("➡️  Prodotti finali:", prodotti);
 
 
     // --- funzioni BASILARI di supporto ---
@@ -70,8 +59,6 @@ export default function FatturaIA({ rawOutput }) {
 
         const rigaFinale = { descrizione, quantita, prezzo, totaleRiga };
 
-        console.log(`🧾 Riga ${i + 1}:`, rigaFinale);
-
         return rigaFinale;
     });
 
@@ -87,7 +74,7 @@ export default function FatturaIA({ rawOutput }) {
     const totale = toNum(totJSON) > 0 ? toNum(totJSON) : totaleCalc;
 
     return (
-        <div className="mt-8 p-6 border border-purple-300 bg-white rounded-xl shadow text-gray-800">
+        <div className="mt-8 p-6 border border-purple-300 bg-white rounded-xl shadow text-gray-800 fade-in max-w-4xl mx-auto">
             <h2 className="text-xl font-bold mb-4">
                 Fattura n. {numeroFattura || "-"} del {data || "/"}
             </h2>
@@ -112,53 +99,55 @@ export default function FatturaIA({ rawOutput }) {
                 </div>
             </div>
 
-            <table className="w-full text-sm border border-gray-200">
-                <thead className="bg-gray-100">
-                    <tr>
-                        <th className="text-left p-1 border-b">Descrizione</th>
-                        <th className="text-right p-1 border-b">Quantità</th>
-                        <th className="text-right p-1 border-b">Prezzo (€)</th>
-                        <th className="text-right p-1 border-b">Totale (€)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {righe.map((r, i) => {
-                        const totalToShow = Number(
-                            r.totaleRiga && r.totaleRiga > 0 ? r.totaleRiga : r.quantita * r.prezzo
-                        );
+            <div className="overflow-x-auto">
+                <table className="min-w-full text-sm border border-gray-200 table-auto">
+                    <thead className="bg-gray-100">
+                        <tr>
+                            <th className="text-left p-1 border-b">Descrizione</th>
+                            <th className="text-right p-1 border-b">Quantità</th>
+                            <th className="text-right p-1 border-b">Prezzo (€)</th>
+                            <th className="text-right p-1 border-b">Totale (€)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {righe.map((r, i) => {
+                            const totalToShow = Number(
+                                r.totaleRiga && r.totaleRiga > 0 ? r.totaleRiga : r.quantita * r.prezzo
+                            );
 
-                        return (
-                            <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                                <td className="p-2">{r.descrizione}</td>
-                                <td className="p-2 text-right">{r.quantita}</td>
-                                <td className="p-2 text-right">
-                                    {r.prezzo.toLocaleString("it-IT", {
-                                        minimumFractionDigits: 2,
-                                        maximumFractionDigits: 2,
-                                    })}
-                                </td>
-                                <td className="p-2 text-right bg-purple-100 font-medium">
-                                    {totalToShow.toLocaleString("it-IT", {
-                                        minimumFractionDigits: 2,
-                                        maximumFractionDigits: 2,
-                                    })}
-                                </td>
-                            </tr>
-                        );
-                    })}
-                </tbody>
-            </table>
+                            return (
+                                <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                                    <td className="p-2">{r.descrizione}</td>
+                                    <td className="p-2 text-right">{r.quantita}</td>
+                                    <td className="p-2 text-right">
+                                        {r.prezzo.toLocaleString("it-IT", {
+                                            minimumFractionDigits: 2,
+                                            maximumFractionDigits: 2,
+                                        })}
+                                    </td>
+                                    <td className="p-2 text-right bg-purple-100 font-medium">
+                                        {totalToShow.toLocaleString("it-IT", {
+                                            minimumFractionDigits: 2,
+                                            maximumFractionDigits: 2,
+                                        })}
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+            </div>
 
             <hr className="mt-10 mb-4 border-t border-gray-200" />
 
             <div className="text-sm text-right text-gray-600">
-                Imponibile: {imponibile.toLocaleString} € – IVA: {iva.toLocaleString("it-IT", {
+                Imponibile: {imponibile.toLocaleString("it-IT", {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                 })} € – IVA: {iva.toLocaleString("it-IT", {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
-                })} €
+                })}
             </div>
             <div className="text-right text-lg font-bold text-purple-700 mt-2">
                 Totale: {totale.toLocaleString("it-IT", {

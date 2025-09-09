@@ -2,6 +2,7 @@
 
 import { useNavigate } from "react-router-dom";
 import StepCard from "../components/stepcard.jsx";
+import React from "react";
 
 const steps = [
     {
@@ -34,26 +35,30 @@ export default function Demo() {
     };
 
     return (
-        <section className="min-h-screen py-20 bg-white flex flex-col items-center">
-            <div className="max-w-6xl mx-auto px-4 w-full">
-                <h2 className="text-3xl md:text-4xl font-bold text-gray-800 text-center mb-16">
-                    Come funziona
-                </h2>
-                <div className="grid md:grid-cols-3 gap-8 mb-16">
-                    {steps.map((step, index) => (
-                        <StepCard key={index} {...step} />
-                    ))}
-                </div>
+        <React.Fragment>
+            <div className="min-h-screen bg-gradient-to-br from-blue-100 via-white to-purple-200 bg-animated-gradient px-4 py-8">
+                <section className="min-h-screen py-20 bg-white flex flex-col items-center">
+                    <div className="max-w-6xl mx-auto px-4 w-full">
+                        <h2 className="text-3xl md:text-4xl font-bold text-gray-800 text-center mb-16">
+                            Come funziona
+                        </h2>
+                        <div className="grid md:grid-cols-3 gap-8 gap-y-10 mb-16">
+                            {steps.map((step, index) => (
+                                <StepCard key={index} {...step} />
+                            ))}
+                        </div>
 
-                <div className="text-center">
-                    <button
-                        onClick={handleNext}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl shadow-md transition"
-                    >
-                        Prosegui
-                    </button>
-                </div>
+                        <div className="text-center">
+                            <button
+                                onClick={handleNext}
+                                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-2xl shadow-lg transition-all duration-300 active:scale-95"
+                            >
+                                Prosegui
+                            </button>
+                        </div>
+                    </div>
+                </section>
             </div>
-        </section>
+        </React.Fragment>
     );
 }

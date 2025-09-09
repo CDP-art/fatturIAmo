@@ -6,7 +6,6 @@ import { enforceTotals, normalizzaFattura } from "../utils/enforceTotals.js";
 export async function generaFattura(req, res) {
     try {
         const { prompt: promptOriginale, supplier } = req.body;
-        console.log("REQUEST BODY:", req.body);
 
         const parziali = await estraiDatiParziali(promptOriginale);
         const prompt = generaPromptFattura(parziali, promptOriginale, supplier);
@@ -28,7 +27,6 @@ export async function generaFattura(req, res) {
         });
 
         let raw = g.data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-        console.log("📦 RISPOSTA GEMINI RAW:\n", raw);
 
         let jsonText = (raw || "").trim();
         if (!jsonText.startsWith("{")) {
@@ -39,7 +37,6 @@ export async function generaFattura(req, res) {
         try {
             draft = JSON.parse(jsonText);
             normalizzaFattura(draft);
-            console.log("✅ RIGHE AI:", draft?.righe);
         } catch (e) {
             console.error("Parse Gemini JSON failed:", jsonText);
             return res.status(502).json({ ok: false, error: "INVALID_AI_JSON" });
@@ -57,8 +54,6 @@ export async function generaFattura(req, res) {
             return Number(val ?? 0);
         };
 
-
-
         let prodotti = [];
 
         if (Array.isArray(draft?.righe)) {
@@ -71,9 +66,6 @@ export async function generaFattura(req, res) {
                 return { descrizione, quantita, prezzo, totaleRiga };
             });
         }
-
-
-
 
         const draftForEnforce = { ...draft, prodotti };
 
@@ -94,9 +86,6 @@ export async function generaFattura(req, res) {
         // Assicura che i prodotti normalizzati siano nel campo "prodotti"
         normalized.prodotti = normalized.prodotti || normalized.righe || [];
         normalized.righe = normalized.prodotti;
-
-
-        console.log("✅ RIGHE NORMALIZZATE:", normalized?.prodotti);
 
         return res.json({ ok: true, data: normalized });
 

@@ -6,12 +6,12 @@ export default function IntroFornitore({ innerRef, onStartClick, titolo, paragra
             <section ref={innerRef} className="min-h-[100vh] flex items-center justify-center px-6">
                 <div className="max-w-3xl w-full">
                     <div className="bg-white/80 backdrop-blur rounded-3xl shadow p-8 text-center">
-                        <h1 className="text-3xl md:text-4xl font-semibold">{titolo}</h1>
+                        <h1 className="text-3xl md:text-4xl font-bold text-gray-800 leading-tight">{titolo}</h1>
                         <p className="mt-4 text-gray-600">{paragrafo}</p>
                         <div className="mt-8 flex justify-center">
                             <button
                                 onClick={onStartClick}
-                                className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl text-white bg-purple-600 hover:bg-purple-700"
+                                className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-400 transition-all duration-200 active:scale-95"
                             >
                                 {testoBottone}
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">

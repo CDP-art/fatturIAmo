@@ -104,7 +104,7 @@ export default function PromptInput({ onGenerated }) {
     return (
         <>
             <textarea
-                className="w-full border-2 border-purple-300 focus:border-purple-500 rounded-xl p-4 min-h-[140px] outline-none"
+                className="w-full p-5 min-h-[160px] text-base sm:text-lg border-2 border-purple-300 rounded-2xl shadow-md text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 transition placeholder:text-gray-400 placeholder:italic"
                 placeholder="Esempio: Crea una fattura da 150€ per una consulenza"
                 value={text}
                 onChange={(e) => setText(e.target.value)}

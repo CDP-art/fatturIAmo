@@ -207,10 +207,10 @@ export default function ModificaFattura() {
                                         <div>
                                             <label className="block text-sm mb-1">Descrizione</label>
                                             <textarea
-                                                rows={2}
+                                                rows={3}
                                                 value={item.descrizione || ""}
                                                 onChange={(e) => updateProdotto(i, "descrizione", e.target.value)}
-                                                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400"
+                                                className="w-full p-3 border border-gray-300 rounded-lg text-sm sm:text-base focus:ring-2 focus:ring-blue-400"
                                             />
                                         </div>
                                         <div className="grid grid-cols-2 gap-3">
@@ -220,7 +220,7 @@ export default function ModificaFattura() {
                                                     type="number"
                                                     value={Number.isFinite(item.quantita) ? item.quantita : 0}
                                                     onChange={(e) => updateProdotto(i, "quantita", e.target.value)}
-                                                    className="w-full p-2 border border-gray-300 rounded-lg text-right focus:ring-2 focus:ring-blue-400"
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-right text-sm sm:text-base focus:ring-2 focus:ring-blue-400"
                                                 />
                                             </div>
                                             <div>
@@ -235,7 +235,7 @@ export default function ModificaFattura() {
                                                         updateProdotto(i, "prezzo", clean);
                                                     }}
 
-                                                    className="w-full p-2 border border-gray-300 rounded-lg text-right focus:ring-2 focus:ring-blue-400"
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-right text-sm sm:text-base focus:ring-2 focus:ring-blue-400"
                                                 />
                                             </div>
                                         </div>
