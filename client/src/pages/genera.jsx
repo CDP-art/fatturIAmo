@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FaRegLightbulb } from 'react-icons/fa';
 import PromptInput from '../components/PromptInput';
 import FatturaIA from '../components/FatturaIA';
 import OutputButtons from '../components/OutputButtons';
+
 
 export default function Genera() {
     const navigate = useNavigate();
@@ -30,6 +32,12 @@ export default function Genera() {
                 <h1 className="text-3xl font-bold text-center mb-6 text-gray-800">
                     Genera una fattura con l’<span className="text-purple-600">IA</span>
                 </h1>
+                <div className="flex items-start gap-3 bg-yellow-100 border-l-4 border-yellow-400 p-4 rounded-lg shadow-sm text-sm text-yellow-800 mb-4">
+                    <FaRegLightbulb className="mt-1 text-yellow-500" />
+                    <p>
+                        <strong>Consiglio:</strong> più dettagli fornisci nel testo (es. quantità, prezzi, descrizioni, date), più precisa sarà la fattura generata.
+                    </p>
+                </div>
 
                 {/* 1) Prompt */}
                 <PromptInput onGenerated={handleGenerated} />
