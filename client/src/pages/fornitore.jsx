@@ -1,31 +1,36 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import IntroFornitore from "../components/IntroFornitore";
 import CaricamentoLogoFornitore from "../components/CaricamentoLogoFornitore";
 import DatiFornitore from "../components/DatiFornitore";
 
-// Pagina Fornitore a 3 sezioni full-screen (100vh)
-// - Sezione 1: Intro + freccia scroll
-// - Sezione 2: Upload logo (PNG/JPG, nessun limite lato client)
-// - Sezione 3: Dati azienda + anteprima + azioni
-// Palette: sfondo sfumato blu→viola, azioni viola/blu, card bianche arrotondate.
-
 export default function Fornitore() {
     const navigate = useNavigate();
 
-    // Stato utente (inserito sempre dall'utente)
+    // Stato per i dati del fornitore
     const [supplier, setSupplier] = useState(null);
 
+    // Stato per lo step attuale
+    //1 = intro
+    //2 = logo
+    //3 = dati
+    const [step, setStep] = useState(1);
+
+    // Dati vuoti di base
     const emptySupplier = {
         ragioneSociale: "",
         piva: "",
         indirizzo: "",
+        citta: "",
         email: "",
         telefono: "",
         logoDataUrl: "",
-        iban: "",
+        ibanBlocks: ["", "", "", "", "", "", ""], // array di blocchi
+        iban: "", // stringa completa (ricostruita dai blocchi)
     }
 
+
+    // Carico dal localStorage all’avvio
     useEffect(() => {
         const raw = localStorage.getItem("fatturiamo.supplier");
         if (raw) {
@@ -33,33 +38,51 @@ export default function Fornitore() {
                 const parsed = JSON.parse(raw);
                 setSupplier({ ...emptySupplier, ...parsed });
             } catch (error) {
-                console.error("Errore nel parsing dei dati del fornitore:", error);
-                setSupplier({ emptySupplier }); // fallback
+                console.error("Errore nel parsing dei dati:", error);
+                setSupplier(emptySupplier);
             }
         } else {
-            setSupplier({ emptySupplier });
+            setSupplier(emptySupplier);
         }
     }, []);
 
-
-    // Salvataggio persistente semplice
+    // Salvataggio semplice
     const saveSupplier = (next) => {
-        setSupplier(next);
-        try { localStorage.setItem("fatturiamo.supplier", JSON.stringify(next)); } catch { }
+
+        const ibanCompleto =
+            (next.ibanCountry || "") +
+            (next.ibanCheck || "") +
+            (next.ibanCin || "") +
+            (next.ibanAbi || "") +
+            (next.ibanCab || "") +
+            (next.ibanConto || "");
+
+        const supplierConIban = { ...next, iban: ibanCompleto };
+
+        setSupplier(supplierConIban);
+        try {
+            localStorage.setItem("fatturiamo.supplier", JSON.stringify(next));
+        } catch {
+            // Se fallisce il salvataggio non blocco l'app
+        }
     };
 
+    // Gestione input testuali
     const onChange = (field) => (e) => {
         saveSupplier({ ...supplier, [field]: e.target.value });
     };
 
-    // Caricamento immagine (solo PNG/JPG, nessun limite di dimensione impostato qui)
+    // Gestione logo
     const onLogoChange = (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        if (!/image\/(png|jpeg)/.test(file.type)) {
+
+        const isValid = /image\/(png|jpeg)/.test(file.type);
+        if (!isValid) {
             alert("Formato non supportato. Usa PNG o JPG.");
             return;
         }
+
         const reader = new FileReader();
         reader.onload = () => {
             saveSupplier({ ...supplier, logoDataUrl: reader.result });
@@ -67,78 +90,84 @@ export default function Fornitore() {
         reader.readAsDataURL(file);
     };
 
+    // Condizione per poter continuare dallo step 3
     const canContinue = supplier?.ragioneSociale?.trim().length > 0;
 
-    // Scroll fluido tra le sezioni
-    const sec1Ref = useRef(null);
-    const sec2Ref = useRef(null);
-    const sec3Ref = useRef(null);
+    // Funzioni per cambiare step
+    const goNext = () => setStep((prev) => Math.min(prev + 1, 3));
+    const goBack = () => setStep((prev) => Math.max(prev - 1, 1));
 
-    const scrollToRef = (ref) => {
-        if (ref?.current) {
-            ref.current.scrollIntoView({ behavior: "smooth" });
-        }
+    const onIbanChange = (index, value) => {
+        const updatedBlocks = [...supplier.ibanBlocks];
+        updatedBlocks[index] = value.toUpperCase(); // forza maiuscole
+        const fullIban = updatedBlocks.join("");
+        saveSupplier({ ...supplier, ibanBlocks: updatedBlocks, iban: fullIban });
     };
+
 
     return (
         <div className="min-h-screen text-gray-800 bg-gradient-to-br from-blue-100 via-indigo-100 to-purple-100 animate-gradient">
-
-            {/* Navigazione step (semplice) */}
+            {/* Navigazione step */}
             <div className="fixed top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2">
-                <span className="text-xs px-3 py-1 rounded-full bg-white/80 shadow">Step 1 · 2 · 3</span>
+                <span className="text-xs px-3 py-1 rounded-full bg-white/80 shadow">
+                    Step {step} di 3
+                </span>
             </div>
 
-            {/* SEZIONE 1: Intro */}
-            <IntroFornitore
-                innerRef={sec1Ref}
-                onStartClick={() => scrollToRef(sec2Ref)}
-                titolo="Ti chiediamo gentilmente di compilare i dati della tua azienda"
-                paragrafo="Queste informazioni verranno usate per intestare e brandizzare le fatture."
-                testoBottone="Inizia"
-            ></IntroFornitore>
-
-            {/* SEZIONE 2: Upload Logo (100vh) */}
-            <CaricamentoLogoFornitore
-                innerRef={sec2Ref}
-                titolo="Inserisci il tuo logo"
-                paragrafo="Formati supportati: PNG o JPG."
-                testoBottone1="Carica immagine"
-                testoBottone2="Continua"
-                size="h-28 w-28"
-                logoUrl={supplier?.logoDataUrl}
-                placeholderTxt="Anteprima"
-                proseguiClick={() => scrollToRef(sec3Ref)}
-                onLogoChange={onLogoChange}
-            ></CaricamentoLogoFornitore>
-
-            {/* SEZIONE 3: Dati azienda (100vh) */}
-            {supplier && (
-                <DatiFornitore
-                    innerRef={sec3Ref}
-                    titolo="Dati dell'azienda"
-                    supplier={supplier}
-                    onChange={onChange}
-                    onContinue={() => navigate("/genera")}
-                    canContinue={canContinue}
-                    onReset={() => {
-                        const empty = {
-                            ragioneSociale: "",
-                            piva: "",
-                            indirizzo: "",
-                            email: "",
-                            telefono: "",
-                            logoDataUrl: "",
-                            iban: ""
-                        };
-                        saveSupplier(empty);
-                    }}
+            {/* STEP 1: Intro */}
+            {step === 1 && (
+                <IntroFornitore
+                    titolo="Ti chiediamo gentilmente di compilare i dati della tua azienda"
+                    paragrafo="Queste informazioni verranno usate per intestare e brandizzare le fatture."
+                    testoBottone="Inizia"
+                    onStartClick={goNext}
                 />
             )}
 
-            {/* Footer leggero */}
-            <footer className="py-6 text-center text-xs text-gray-500">
+            {/* STEP 2: Logo */}
+            {step === 2 && (
+                <CaricamentoLogoFornitore
+                    titolo="Inserisci il tuo logo"
+                    paragrafo="Formati supportati: PNG o JPG."
+                    testoBottone1="Carica immagine"
+                    testoBottone2="Continua"
+                    size="h-28 w-28"
+                    logoUrl={supplier?.logoDataUrl}
+                    placeholderTxt="Anteprima"
+                    onLogoChange={onLogoChange}
+                    proseguiClick={goNext}
+                />
+            )}
+
+            {/* STEP 3: Dati azienda */}
+            {step === 3 && supplier && (
+                <DatiFornitore
+                    titolo="Dati dell'azienda"
+                    supplier={supplier}
+                    onChange={onChange}
+                    onIbanChange={onIbanChange}
+                    canContinue={canContinue}
+                    onContinue={() => navigate("/genera")}
+                    onReset={() => saveSupplier(emptySupplier)}
+                />
+            )}
+
+            {/* Bottone "Indietro" solo dallo step 2 in poi */}
+            {step > 1 && (
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2">
+                    <button
+                        onClick={goBack}
+                        className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-2 rounded-2xl shadow transition"
+                    >
+                        ↩️ Indietro
+                    </button>
+                </div>
+            )}
+
+            {/* Footer */}
+            {/*   <footer className="py-6 text-center text-xs text-gray-500">
                 Generato automaticamente da FatturIAmo
-            </footer>
+            </footer> */}
         </div>
     );
 }

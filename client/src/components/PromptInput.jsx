@@ -6,11 +6,9 @@ function safeGetLS(key) {
     catch { return null; }
 }
 
-// Normalizzatore: traduce l'output AI nel formato standard della tua app
+// Normalizzatore invariato
 function normalizeInvoice(json) {
     const supplier = safeGetLS("fatturiamo.supplier") || {};
-
-    // L'AI a volte manda "righe" invece di "prodotti"
     const righe = Array.isArray(json?.righe) ? json.righe
         : Array.isArray(json?.prodotti) ? json.prodotti
             : [];
@@ -36,7 +34,6 @@ function normalizeInvoice(json) {
             indirizzo: json?.cliente?.indirizzo || "",
             email: json?.cliente?.email || "",
         },
-        // Fondiamo i dati del fornitore dal localStorage (quelli inseriti dall’utente)
         fornitore: {
             ragioneSociale: supplier?.ragioneSociale || json?.fornitore?.ragioneSociale || "",
             nome: supplier?.ragioneSociale || json?.fornitore?.nome || "",
@@ -44,7 +41,6 @@ function normalizeInvoice(json) {
             indirizzo: supplier?.indirizzo || json?.fornitore?.indirizzo || "",
             email: supplier?.email || json?.fornitore?.email || "",
             telefono: supplier?.telefono || json?.fornitore?.telefono || "",
-            // il logo lo useremo solo in export PDF
         },
         prodotti,
         imponibile: Number(imponibile.toFixed(2)),
@@ -85,13 +81,8 @@ export default function PromptInput({ onGenerated }) {
                 throw new Error(data?.error || "Risposta non valida dal server");
             }
 
-            // NORMALIZZO PRIMA DI SALVARE
             const normalized = normalizeInvoice(data.data);
-
-            // salvo per /modifica e /esporta
             localStorage.setItem("fatturiamo.draft", JSON.stringify(normalized));
-
-            // notifico il padre se serve (ma possiamo anche navigare direttamente lì)
             onGenerated && onGenerated(normalized);
         } catch (e) {
             console.error(e);
@@ -102,22 +93,23 @@ export default function PromptInput({ onGenerated }) {
     };
 
     return (
-        <>
+        <div className="flex flex-col gap-4 mt-6 w-full max-w-2xl mx-auto">
             <textarea
-                className="w-full p-5 min-h-[160px] text-base sm:text-lg border-2 border-purple-300 rounded-2xl shadow-md text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 transition placeholder:text-gray-400 placeholder:italic"
-                placeholder="Esempio: Crea una fattura da 150€ per una consulenza"
+                className="w-full h-40 p-4 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none text-sm sm:text-base"
+                placeholder="✍️ Es: 'Crea una fattura di 500€ con IVA inclusa per consulenza marketing'."
+                aria-label="Inserisci i dettagli della fattura"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
             />
-            {err && <p className="text-red-600 text-sm mt-2">{err}</p>}
+            {err && <p className="text-red-600 text-sm">{err}</p>}
 
             <button
                 onClick={handleGenerate}
                 disabled={isLoading}
-                className="w-full mt-4 py-3 rounded-2xl text-white bg-purple-600 hover:bg-purple-700 disabled:opacity-50"
+                className="bg-gradient-to-r from-purple-600 to-indigo-500 hover:brightness-110 disabled:opacity-50 text-white font-medium py-3 px-6 rounded-2xl shadow-md transition-transform duration-300 active:scale-95 mx-auto w-full sm:w-auto"
             >
-                {isLoading ? "Generazione in corso..." : "Genera fattura"}
+                {isLoading ? "⚡ Generazione in corso..." : "🚀 Genera fattura"}
             </button>
-        </>
+        </div>
     );
 }

@@ -44,29 +44,27 @@ export default function OutputButtons({ onReset, onEdit }) {
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className="mt-6 flex flex-col sm:flex-row gap-4 justify-center"
+            className="mt-8 flex flex-col sm:flex-row gap-4 justify-center flex-wrap"
         >
             {buttons.map((btn, i) => (
                 <motion.button
                     key={i}
                     onClick={btn.action}
                     variants={buttonVariants}
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                     transition={{ duration: 0.2, ease: "easeOut" }}
-                    className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold shadow-md transition-all active:scale-95
-  ${btn.danger
-                            ? "text-red-600 border border-red-300 hover:bg-red-50"
+                    className={`flex items-center justify-center gap-2 px-6 py-3 rounded-2xl font-medium shadow-md transition-all active:scale-95 min-w-[200px]
+                        ${btn.danger
+                            ? "text-red-600 border border-red-300 bg-white hover:bg-red-50"
                             : btn.primary
-                                ? "bg-purple-600 text-white hover:bg-purple-700"
-                                : "text-gray-800 border border-gray-300 hover:bg-gray-100"
+                                ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:brightness-110"
+                                : "text-gray-800 border border-gray-300 bg-white hover:bg-gray-100"
                         }`}
-
                 >
-                    {btn.icon}
-                    {btn.text}
+                    <span className="text-lg">{btn.icon}</span>
+                    <span>{btn.text}</span>
                 </motion.button>
-
             ))}
         </motion.div>
     );

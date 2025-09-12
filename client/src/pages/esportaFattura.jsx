@@ -97,23 +97,46 @@ export default function EsportaFatturaPDF() {
     };
 
     return (
-        <>
-            <div className="relative h-screen w-full bg-gradient-to-br from-blue-300 via-white to-purple-300">
+        <React.Fragment>
+            <div className="relative min-h-screen w-full bg-gradient-to-br from-blue-300 via-white to-purple-400">
+                {/* Overlay trasparente con leggero blur */}
                 <div className="absolute inset-0 bg-black/10 backdrop-blur-sm z-0" />
-                <div className="relative z-10 flex flex-col items-center justify-center h-full px-10 py-10">
-                    <h1 className="text-2xl sm:text-3xl font-bold text-center mb-10">Esporta la fattura</h1>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 justify-center items-start fade-in">
-                        <EsportazioneCard descrizioneCard="Crea un PDF formale con tutti i dati obbligatori di fornitore e cliente.">
-                            <EsportazioneButtons action={handleGeneratePDF} testoBottone="Esporta in PDF" />
+
+                {/* Contenuto principale */}
+                <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6 py-12">
+                    {/* Titolo celebrativo */}
+                    <h1 className="text-3xl sm:text-4xl font-extrabold text-center mb-6 text-gray-800">
+                        🎉 La tua fattura è pronta!
+                    </h1>
+
+                    {/* Sottotitolo descrittivo */}
+                    <p className="text-lg text-gray-600 mb-12 text-center max-w-xl">
+                        Puoi esportarla nel formato che preferisci. <br />
+                        <span className="font-semibold text-purple-600">FatturIAmo</span> ti
+                        garantisce compatibilità e stile.
+                    </p>
+
+                    {/* Card esportazione */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
+                        <EsportazioneCard descrizioneCard="Crea un PDF formale con tutti i dati di fornitore e cliente.">
+                            <EsportazioneButtons
+                                action={handleGeneratePDF}
+                                testoBottone="📑 Esporta in PDF"
+                            />
                         </EsportazioneCard>
-                        <EsportazioneCard descrizioneCard="Esporta un file XML compatibile con i requisiti della fatturazione elettronica.">
-                            <EsportazioneButtons action={() => handleGenerateXML(invoice)} testoBottone="Esporta in XML" />
+
+                        <EsportazioneCard descrizioneCard="Genera un XML compatibile con la fatturazione elettronica italiana.">
+                            <EsportazioneButtons
+                                action={() => handleGenerateXML(invoice)}
+                                testoBottone="📂 Esporta in XML"
+                            />
                         </EsportazioneCard>
                     </div>
                 </div>
             </div>
-        </>
+        </React.Fragment>
     );
+
 }
 
 

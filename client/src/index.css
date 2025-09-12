@@ -23,8 +23,11 @@
 }
 
 .bg-animated-gradient {
+    background: linear-gradient(to bottom right, #3b82f6, #ffffff, #8b5cf6);
+    /* blu-500 → bianco → viola-600 */
     background-size: 200% 200%;
     animation: gradient-move 15s ease infinite;
+    /* 🌊 fluido e elegante */
 }
 
 @layer utilities {

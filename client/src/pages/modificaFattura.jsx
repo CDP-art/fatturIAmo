@@ -140,118 +140,121 @@ export default function ModificaFattura() {
 
     return (
         <React.Fragment>
-            <div className="relative min-h-screen bg-gradient-to-br from-blue-300 via-white to-purple-400 px-4 py-10 flex flex-col items-center justify-center">
-                <div className="absolute inset-0 bg-black/30 z-0" />
+            {/* Contenitore principale */}
+            <div className="relative min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-blue-300 via-white to-purple-400 animate-gradient">
+                {/* Overlay che copre tutta la viewport */}
+                <div className="absolute inset-0 bg-black/20 z-0" />
 
-                <div className="relative z-10 w-full max-w-2xl bg-white rounded-2xl shadow-2xl ring-1 ring-gray-200 p-4 sm:p-8 text-gray-800">
-                    <h2 className="text-2xl sm:text-3xl font-bold text-center mb-6 sm:mb-8">Modifica la tua fattura</h2>
+                {/* Card */}
+                <div className="relative z-10 w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-white rounded-3xl shadow-xl ring-1 ring-gray-200 p-6 sm:p-10 text-gray-800 m-3">
+                    <h2 className="text-2xl sm:text-3xl font-extrabold text-center mb-8">
+                        ✏️ Modifica la tua fattura
+                    </h2>
 
-                    <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 mb-6">
-                        <div className="flex-1">
-                            <label className="block text-sm font-medium mb-1">Numero Fattura</label>
+                    {/* Campi intestazione */}
+                    <div className="grid sm:grid-cols-2 gap-6 mb-8">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-600 mb-1">Numero Fattura</label>
                             <input
                                 type="text"
                                 value={form.numeroFattura || ""}
                                 onChange={setField("numeroFattura")}
-                                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400"
+                                className="w-full border border-gray-300 rounded-xl px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                             />
                         </div>
-                        <div className="flex-1">
-                            <label className="block text-sm font-medium mb-1">Data (DD/MM/YYYY)</label>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-600 mb-1">Data</label>
                             <input
                                 type="text"
                                 value={form.data || ""}
                                 onChange={setField("data")}
-                                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400"
+                                className="w-full border border-gray-300 rounded-xl px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                             />
                         </div>
                     </div>
 
-                    <h3 className="text-xl font-semibold mb-4">Cliente</h3>
-                    <div className="grid sm:grid-cols-2 gap-4 sm:gap-6 mb-6">
+                    {/* Cliente */}
+                    <h3 className="text-lg font-semibold mb-4">👤 Cliente</h3>
+                    <div className="grid sm:grid-cols-2 gap-6 mb-8">
                         <div>
-                            <label className="block text-sm font-medium mb-1">Nome e Cognome</label>
+                            <label className="block text-sm font-medium text-gray-600 mb-1">Nome e Cognome</label>
                             <input
                                 type="text"
                                 value={form.clienteNome || ""}
                                 onChange={setField("clienteNome")}
-                                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400"
+                                className="w-full border border-gray-300 rounded-xl px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium mb-1">P.IVA</label>
+                            <label className="block text-sm font-medium text-gray-600 mb-1">P.IVA</label>
                             <input
                                 type="text"
                                 value={form.clientePiva || ""}
                                 onChange={setField("clientePiva")}
-                                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400"
+                                className="w-full border border-gray-300 rounded-xl px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                             />
                         </div>
                         <div className="sm:col-span-2">
-                            <label className="block text-sm font-medium mb-1">Indirizzo</label>
+                            <label className="block text-sm font-medium text-gray-600 mb-1">Indirizzo</label>
                             <input
                                 type="text"
                                 value={form.clienteIndirizzo || ""}
                                 onChange={setField("clienteIndirizzo")}
-                                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400"
+                                className="w-full border border-gray-300 rounded-xl px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                             />
                         </div>
                     </div>
 
-                    <h3 className="text-xl font-semibold mb-4">Prodotti / Servizi</h3>
-                    <div className="space-y-4 mb-8">
+                    {/* Prodotti */}
+                    <h3 className="text-lg font-semibold mb-4">🛒 Prodotti / Servizi</h3>
+                    <div className="space-y-6 mb-10">
                         {form.prodotti.map((item, i) => (
-                            <div key={i} className="flex gap-2 items-center justify-center">
-                                <div className="p-3 border border-gray-200 rounded-lg bg-white w-full">
-                                    <div className="flex flex-col gap-3">
+                            <div key={i} className="p-4 border border-gray-200 rounded-2xl shadow-sm bg-gray-50 relative">
+                                <div className="flex flex-col gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-600 mb-1">Descrizione</label>
+                                        <textarea
+                                            rows={2}
+                                            value={item.descrizione || ""}
+                                            onChange={(e) => updateProdotto(i, "descrizione", e.target.value)}
+                                            className="w-full border border-gray-300 rounded-xl px-4 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm mb-1">Descrizione</label>
-                                            <textarea
-                                                rows={3}
-                                                value={item.descrizione || ""}
-                                                onChange={(e) => updateProdotto(i, "descrizione", e.target.value)}
-                                                className="w-full p-3 border border-gray-300 rounded-lg text-sm sm:text-base focus:ring-2 focus:ring-blue-400"
+                                            <label className="block text-sm font-medium text-gray-600 mb-1">Quantità</label>
+                                            <input
+                                                type="number"
+                                                value={item.quantita}
+                                                onChange={(e) => updateProdotto(i, "quantita", e.target.value)}
+                                                className="w-full border border-gray-300 rounded-xl px-4 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                                             />
                                         </div>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <div>
-                                                <label className="block text-sm mb-1">Quantità</label>
-                                                <input
-                                                    type="number"
-                                                    value={Number.isFinite(item.quantita) ? item.quantita : 0}
-                                                    onChange={(e) => updateProdotto(i, "quantita", e.target.value)}
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-right text-sm sm:text-base focus:ring-2 focus:ring-blue-400"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm mb-1">Prezzo (€)</label>
-                                                <input
-                                                    type="number"
-                                                    step="0.01"
-                                                    value={Number(item.prezzo) || 0}
-                                                    onChange={(e) => {
-                                                        const raw = e.target.value;
-                                                        const clean = raw.replace(/^0+(?=\d)/, ""); // rimuove zeri iniziali
-                                                        updateProdotto(i, "prezzo", clean);
-                                                    }}
-
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-right text-sm sm:text-base focus:ring-2 focus:ring-blue-400"
-                                                />
-                                            </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-600 mb-1">Prezzo (€)</label>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                value={item.prezzo}
+                                                onChange={(e) => updateProdotto(i, "prezzo", e.target.value)}
+                                                className="w-full border border-gray-300 rounded-xl px-4 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                            />
                                         </div>
                                     </div>
                                 </div>
-                                <div className="flex flex-col gap-2 pt-1">
+
+                                {/* Bottoni add/remove riga */}
+                                <div className="absolute top-1 right-0 pr-4 flex gap-2">
                                     <button
                                         onClick={() => eliminaProdotto(i)}
-                                        className="h-8 w-8 text-red-500 border border-red-300 rounded-full hover:bg-red-100 transition"
+                                        className="h-8 w-8 text-red-500 border border-red-300 rounded-full hover:bg-red-100 flex items-center justify-center transition"
                                         aria-label="Rimuovi riga"
                                     >
                                         &minus;
                                     </button>
                                     <button
                                         onClick={aggiungiProdotto}
-                                        className="h-8 w-8 text-purple-600 border border-purple-300 rounded-full hover:bg-purple-100 transition"
+                                        className="h-8 w-8 text-purple-600 border border-purple-300 rounded-full hover:bg-purple-100 flex items-center justify-center transition"
                                         aria-label="Aggiungi riga"
                                     >
                                         +
@@ -266,37 +269,45 @@ export default function ModificaFattura() {
                         )}
                     </div>
 
-                    <div className="mb-6 flex flex-col items-end">
-                        <label className="block text-sm font-bold mb-1">Aliquota IVA</label>
-                        <select
-                            value={Number(form.aliquotaIva)}
-                            onChange={(e) => setForm((prev) => ({ ...prev, aliquotaIva: Number(e.target.value) }))}
-                            className="w-32 px-4 py-1 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-blue-400"
-                        >
-                            <option value={0}>0%</option>
-                            <option value={4}>4%</option>
-                            <option value={10}>10%</option>
-                            <option value={22}>22%</option>
-                        </select>
+                    {/* Aliquota + Totale */}
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
+                        <div>
+                            <label className="block text-sm font-bold mb-1">Aliquota IVA</label>
+                            <select
+                                value={form.aliquotaIva}
+                                onChange={(e) => setForm((prev) => ({ ...prev, aliquotaIva: Number(e.target.value) }))}
+                                className="w-40 px-4 py-2 border-2 border-purple-300 rounded-xl focus:ring-2 focus:ring-purple-500"
+                            >
+                                <option value={0}>0%</option>
+                                <option value={4}>4%</option>
+                                <option value={10}>10%</option>
+                                <option value={22}>22%</option>
+                            </select>
+                        </div>
+
+                        <div className="text-right text-2xl font-bold text-purple-600">
+                            Totale: € {totale.toLocaleString("it-IT", { minimumFractionDigits: 2 })}
+                        </div>
                     </div>
 
-                    <div className="text-right text-xl font-semibold text-purple-600">
-                        Totale: € {totale.toLocaleString("it-IT", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                        })}
+                    {/* Footer CTA */}
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
+                        <button
+                            onClick={() => navigate(-1)}
+                            className="w-full sm:w-auto bg-gray-200 hover:bg-gray-300 text-gray-800 px-8 py-3 rounded-2xl shadow-md transition-transform hover:scale-105 active:scale-95"
+                        >
+                            ↩️ Torna indietro
+                        </button>
+                        <button
+                            onClick={handleExportFattura}
+                            className="w-full sm:w-auto bg-gradient-to-r from-green-500 to-green-600 hover:brightness-110 text-white px-8 py-3 rounded-2xl shadow-md transition-transform hover:scale-105 active:scale-95"
+                        >
+                            💾 Salva modifiche
+                        </button>
                     </div>
                 </div>
-
-                <footer className="relative z-10 w-full max-w-2xl mt-10 px-4 text-center">
-                    <button
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl shadow-md transition"
-                        onClick={handleExportFattura}
-                    >
-                        Salva e Prosegui
-                    </button>
-                </footer>
             </div>
+
         </React.Fragment>
     );
 }

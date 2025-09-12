@@ -25,22 +25,19 @@ export default function FatturaIA({ rawOutput }) {
         prodotti = parsed.righe;
     }
 
-
     // --- funzioni BASILARI di supporto ---
-    // Trasforma "500", "500,00", "€500,00" -> 500
     const toNum = (v) => {
         if (typeof v === "number") return v;
         if (!v) return 0;
         const s = String(v)
             .replace(/\s/g, "")
-            .replace(/\./g, "")   // migliaia
-            .replace(/,/g, ".")   // decimali
+            .replace(/\./g, "")
+            .replace(/,/g, ".")
             .replace(/[^\d.-]/g, "");
         const n = Number(s);
         return Number.isFinite(n) ? n : 0;
     };
 
-    // Nome cliente: supporta più formati
     const nomeCliente =
         typeof cliente === "string"
             ? cliente
@@ -56,22 +53,24 @@ export default function FatturaIA({ rawOutput }) {
         const quantita = toNum(p.quantita ?? p.qty ?? p.ore ?? 1);
         const prezzo = toNum(p.prezzo ?? p.tariffaOraria ?? p.prezzoUnitario ?? p.prezzoOrario);
         const totaleRiga = toNum(p.totaleRiga ?? prezzo * quantita);
-
-        const rigaFinale = { descrizione, quantita, prezzo, totaleRiga };
-
-        return rigaFinale;
+        return { descrizione, quantita, prezzo, totaleRiga };
     });
-
 
     // --- calcoli totali ---
     const imponibileCalc = righe.reduce((s, r) => s + r.totaleRiga, 0);
     const ivaCalc = imponibileCalc * (toNum(aliquotaIva) / 100);
     const totaleCalc = imponibileCalc + ivaCalc;
 
-    // se nel JSON ci sono già valori sensati, li mostro; altrimenti uso i calcolati
     const imponibile = toNum(impJSON) > 0 ? toNum(impJSON) : imponibileCalc;
     const iva = toNum(ivaJSON) >= 0 ? toNum(ivaJSON) : ivaCalc;
     const totale = toNum(totJSON) > 0 ? toNum(totJSON) : totaleCalc;
+
+    function formatoEuro(value) {
+        return Number(value || 0).toLocaleString("it-IT", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
 
     return (
         <div className="mt-8 p-6 border border-purple-300 bg-white rounded-xl shadow text-gray-800 fade-in max-w-4xl mx-auto">
@@ -79,6 +78,7 @@ export default function FatturaIA({ rawOutput }) {
                 Fattura n. {numeroFattura || "-"} del {data || "/"}
             </h2>
 
+            {/* Info Cliente/Fornitore */}
             <div className="mb-6 text-sm space-y-3">
                 <div>
                     <h4 className="text-gray-500 font-semibold uppercase text-xs">Cliente</h4>
@@ -99,14 +99,15 @@ export default function FatturaIA({ rawOutput }) {
                 </div>
             </div>
 
-            <div className="overflow-x-auto">
-                <table className="min-w-full text-sm border border-gray-200 table-auto">
+            {/* Tabella prodotti */}
+            <div className="overflow-x-auto mt-6">
+                <table className="min-w-[500px] w-full border border-gray-200 rounded-lg shadow-sm">
                     <thead className="bg-gray-100">
                         <tr>
-                            <th className="text-left p-1 border-b">Descrizione</th>
-                            <th className="text-right p-1 border-b">Quantità</th>
-                            <th className="text-right p-1 border-b">Prezzo (€)</th>
-                            <th className="text-right p-1 border-b">Totale (€)</th>
+                            <th className="text-left p-2 border-b">Descrizione</th>
+                            <th className="text-right p-2 border-b">Quantità</th>
+                            <th className="text-right p-2 border-b">Prezzo (€)</th>
+                            <th className="text-right p-2 border-b">Totale (€)</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -114,22 +115,18 @@ export default function FatturaIA({ rawOutput }) {
                             const totalToShow = Number(
                                 r.totaleRiga && r.totaleRiga > 0 ? r.totaleRiga : r.quantita * r.prezzo
                             );
-
                             return (
-                                <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                                <tr
+                                    key={i}
+                                    className={`${i % 2 === 0 ? "bg-white" : "bg-gray-50"} border-b`}
+                                >
                                     <td className="p-2">{r.descrizione}</td>
                                     <td className="p-2 text-right">{r.quantita}</td>
-                                    <td className="p-2 text-right">
-                                        {r.prezzo.toLocaleString("it-IT", {
-                                            minimumFractionDigits: 2,
-                                            maximumFractionDigits: 2,
-                                        })}
+                                    <td className="p-2 text-right tabular-nums">
+                                        {formatoEuro(r.prezzo)}
                                     </td>
-                                    <td className="p-2 text-right bg-purple-100 font-medium">
-                                        {totalToShow.toLocaleString("it-IT", {
-                                            minimumFractionDigits: 2,
-                                            maximumFractionDigits: 2,
-                                        })}
+                                    <td className="p-2 text-right bg-purple-100 font-medium tabular-nums">
+                                        {formatoEuro(totalToShow)}
                                     </td>
                                 </tr>
                             );
@@ -138,27 +135,22 @@ export default function FatturaIA({ rawOutput }) {
                 </table>
             </div>
 
-            <hr className="mt-10 mb-4 border-t border-gray-200" />
-
-            <div className="text-sm text-right text-gray-600">
-                Imponibile: {imponibile.toLocaleString("it-IT", {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                })} € – IVA: {iva.toLocaleString("it-IT", {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                })}
-            </div>
-            <div className="text-right text-lg font-bold text-purple-700 mt-2">
-                Totale: {totale.toLocaleString("it-IT", {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                })} €
+            {/* Box Totali */}
+            <div className="mt-6 p-4 bg-gray-100 rounded-lg shadow-inner text-sm sm:text-base max-w-md text-right flex flex-col gap-1 ml-auto ">
+                <p><strong>Imponibile:</strong> {formatoEuro(imponibile)} €</p>
+                <p><strong>IVA ({aliquotaIva}%):</strong> {formatoEuro(iva)} €</p>
+                <p className="text-lg font-bold text-purple-700 mt-2">
+                    Totale: {formatoEuro(totale)} €
+                </p>
             </div>
 
+            {/* Nota e branding */}
             <div className="mt-6 text-xs">
                 *Nella pagina successiva potrai modificare i dettagli della fattura.
             </div>
+            <p className="text-center text-xs text-gray-400 mt-6 italic">
+                Generato automaticamente da <span className="text-purple-600 font-semibold">FatturIAmo</span>
+            </p>
         </div>
     );
 }

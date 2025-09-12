@@ -16,11 +16,17 @@ export default function CaricamentoLogoFornitore({ innerRef, titolo, paragrafo, 
                         <div className="flex flex-col items-center gap-6">
                             {/* Bottone upload */}
                             <label className="cursor-pointer">
-                                <span className="px-5 py-3 rounded-2xl text-white bg-blue-600 hover:bg-blue-700 transition">
+                                <span className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:brightness-110 text-white font-semibold px-6 py-3 rounded-2xl shadow-md transition-transform hover:scale-105 active:scale-95">
                                     {testoBottone1}
                                 </span>
-                                <input type="file" accept="image/png,image/jpeg" onChange={onLogoChange} className="hidden" />
+                                <input
+                                    type="file"
+                                    accept="image/png,image/jpeg"
+                                    onChange={onLogoChange}
+                                    className="hidden"
+                                />
                             </label>
+
 
                             {/* Anteprima logo */}
                             <div className={`${size} rounded-2xl border bg-white shadow-sm flex items-center justify-center overflow-hidden`}>
@@ -34,7 +40,7 @@ export default function CaricamentoLogoFornitore({ innerRef, titolo, paragrafo, 
                             {/* Bottone continua */}
                             <button
                                 onClick={proseguiClick}
-                                className="px-6 py-3 rounded-2xl text-white bg-purple-600 hover:bg-purple-700 transition"
+                                className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-blue-600 hover:brightness-110 text-white font-semibold px-6 py-3 rounded-2xl shadow-md transition-transform hover:scale-105 active:scale-95"
                             >
                                 {testoBottone2}
                             </button>
