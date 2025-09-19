@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import Swal from "sweetalert2";
 
 function safeGetLS(key) {
     try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : null; }
@@ -58,8 +59,20 @@ export default function PromptInput({ onGenerated }) {
 
     const handleGenerate = async () => {
         setErr("");
+
         if (!text.trim()) {
-            setErr("Scrivi cosa vuoi fatturare (es. Crea una fattura da 300€ per sopralluogo).");
+            Swal.fire({
+                icon: "warning",
+                title: "Inserisci i dettagli della fattura prima di generare.",
+                confirmButtonText: "Ok, capito",
+                customClass: {
+                    popup: "rounded-2xl shadow-xl bg-white max-w-lg w-[90%] sm:w-[400px]",
+                    title: "text-gray-800 font-bold text-lg",
+                    confirmButton:
+                        "w-[60%] sm:w-auto bg-gradient-to-r from-purple-600 to-blue-600 hover:brightness-110 text-white font-semibold px-6 py-3 rounded-2xl shadow-md transition-transform hover:scale-105 active:scale-95 mx-auto",
+                },
+                buttonsStyling: false,
+            });
             return;
         }
 
@@ -84,8 +97,24 @@ export default function PromptInput({ onGenerated }) {
             const normalized = normalizeInvoice(data.data);
             localStorage.setItem("fatturiamo.draft", JSON.stringify(normalized));
             onGenerated && onGenerated(normalized);
+
         } catch (e) {
             console.error(e);
+
+            Swal.fire({
+                icon: "error",
+                title: "Errore",
+                text: e?.message || "Qualcosa è andato storto. Riprova più tardi.",
+                confirmButtonText: "Ok",
+                customClass: {
+                    popup: "rounded-2xl shadow-xl bg-white max-w-lg w-[90%] sm:w-[400px]",
+                    title: "text-gray-800 font-bold text-lg",
+                    confirmButton:
+                        "w-[60%] sm:w-auto bg-gradient-to-r from-purple-600 to-blue-600 hover:brightness-110 text-white font-semibold px-6 py-3 rounded-2xl shadow-md transition-transform hover:scale-105 active:scale-95 mx-auto",
+                },
+                buttonsStyling: false,
+            });
+
             setErr(`Qualcosa è andato storto: ${e?.message || "errore sconosciuto"}`);
         } finally {
             setIsLoading(false);

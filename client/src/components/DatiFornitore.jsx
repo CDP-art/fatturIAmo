@@ -8,6 +8,7 @@ export default function DatiFornitore({
     onContinue,
     canContinue,
     onReset,
+    onBack,
 }) {
     return (
         <section
@@ -19,13 +20,14 @@ export default function DatiFornitore({
                 {titolo}
             </h2>
 
-            {/* Card contenitore */}
+            {/* Card */}
             <div className="max-w-3xl w-full">
-                <div className="bg-white/80 backdrop-blur rounded-3xl shadow p-4">
+                <div className="bg-white/80 backdrop-blur rounded-3xl shadow p-6">
+                    {/* Campi */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         {/* Ragione sociale */}
                         <div>
-                            <label className="block mb-1 text-sm">Ragione sociale *</label>
+                            <label className="block mb-1 text-sm">Ragione sociale</label>
                             <input
                                 className="w-full border rounded-xl p-3"
                                 placeholder="Es. ACME S.r.l."
@@ -141,15 +143,36 @@ export default function DatiFornitore({
                     </div>
 
                     {/* Bottoni */}
-                    <div className="mt-6 flex flex-col sm:flex-row gap-4 justify-center items-center">
+                    <div className="mt-6 flex flex-col gap-4">
+                        {/* Riga principale: indietro e continua */}
+                        <div className="flex justify-between gap-4 w-full">
+                            <button
+                                type="button"
+                                onClick={onBack}
+                                className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-3 rounded-2xl shadow-md transition-transform hover:scale-105 active:scale-95"
+                            >
+                                ↩️ Indietro
+                            </button>
+
+                            <button
+                                onClick={onContinue}
+                                disabled={!canContinue}
+                                className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:brightness-110 text-white font-semibold px-6 py-3 rounded-2xl shadow-md transition-transform hover:scale-105 active:scale-95 disabled:opacity-50"
+                            >
+                                Salva e continua
+                            </button>
+                        </div>
+
+                        {/* Reset separato */}
                         <button
                             type="button"
                             onClick={onReset}
-                            className="w-[70%] sm:w-auto bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-3 rounded-2xl shadow-md transition-transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+                            className="w-full bg-red-100 hover:bg-red-200 text-red-700 px-6 py-3 rounded-2xl shadow transition flex items-center justify-center gap-2"
                         >
+                            {/* Icona cestino */}
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
-                                className="h-5 w-5"
+                                className="h-5 w-5 text-red-600"
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 stroke="currentColor"
@@ -164,13 +187,6 @@ export default function DatiFornitore({
                             Reset campi
                         </button>
 
-                        <button
-                            onClick={onContinue}
-                            disabled={!canContinue}
-                            className="w-[70%] sm:w-auto bg-gradient-to-r from-purple-600 to-blue-600 hover:brightness-110 text-white font-semibold px-6 py-3 rounded-2xl shadow-md transition-transform hover:scale-105 active:scale-95 disabled:opacity-50"
-                        >
-                            Salva e continua
-                        </button>
                     </div>
                 </div>
             </div>

@@ -28,61 +28,64 @@ export default function Accesso() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-300 via-white to-purple-400 flex items-center justify-center px-4">
-            <div className="bg-gray-900 text-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
-                <h2 className="text-3xl font-bold text-center mb-6">
-                    Accedi a <span className="text-purple-400">FatturIAmo</span>
-                </h2>
+        <div className="min-h-screen bg-gradient-to-br from-blue-300 via-indigo-100 to-purple-300 bg-animated-gradient flex items-center justify-center px-4">
+            <div className="absolute inset-0 bg-black/20 z-0 flex items-center justify-center">
+                <div className="bg-black/90 backdrop-blur-md text-white rounded-2xl shadow-2xl py-10 px-6 sm:px-8 w-full max-w-md border border-purple-500/30 mx-4 my-6">
+                    <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8">
+                        Accedi a <span className="text-purple-400">FatturIAmo</span>
+                    </h2>
 
-                {error && (
-                    <p className="text-red-400 text-sm text-center mb-4">{error}</p>
-                )}
+                    {error && (
+                        <p className="text-red-400 text-sm text-center mb-4">{error}</p>
+                    )}
 
-                <form onSubmit={handleLogin} className="space-y-4">
-                    <input
-                        type="email"
-                        placeholder="Email"
-                        className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg placeholder-gray-400 focus:ring-2 focus:ring-purple-500 text-white"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                    />
-                    <input
-                        type="password"
-                        placeholder="Password"
-                        className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg placeholder-gray-400 focus:ring-2 focus:ring-purple-500 text-white"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                    />
-                    <button
-                        type="submit"
-                        className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 rounded-lg transition"
-                    >
-                        Accedi
-                    </button>
-                </form>
+                    <form onSubmit={handleLogin} className="space-y-5">
+                        <input
+                            type="email"
+                            placeholder="Email"
+                            className="w-full p-3 bg-gray-800 border border-gray-700 rounded-xl placeholder-gray-400 focus:ring-2 focus:ring-purple-500 text-white text-sm sm:text-base"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                        />
+                        <input
+                            type="password"
+                            placeholder="Password"
+                            className="w-full p-3 bg-gray-800 border border-gray-700 rounded-xl placeholder-gray-400 focus:ring-2 focus:ring-purple-500 text-white text-sm sm:text-base"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                        />
+                        <button
+                            type="submit"
+                            className="w-[70%] mx-auto block bg-gradient-to-r from-purple-600 to-blue-600 hover:brightness-110 text-white font-semibold py-3 rounded-xl shadow-md transition-transform duration-300 hover:scale-105 active:scale-95"
+                        >
+                            Accedi
+                        </button>
+                    </form>
 
-                <p className="mt-4 text-center text-sm text-gray-400">
-                    Non hai un account?{" "}
-                    <a
-                        href="/signup"
-                        className="text-purple-400 hover:underline font-semibold"
-                    >
-                        Registrati
-                    </a>
-                </p>
+                    <p className="mt-6 text-center text-sm text-gray-400">
+                        Non hai un account?{" "}
+                        <a
+                            href="/signup"
+                            className="text-purple-400 hover:underline font-semibold"
+                        >
+                            Registrati
+                        </a>
+                    </p>
 
-                <div className="mt-6 border-t border-gray-700 pt-4 text-center">
-                    <p className="mb-2 text-sm text-gray-500">oppure</p>
-                    <button
-                        onClick={handleAnonimo}
-                        className="w-full border border-purple-500 hover:bg-purple-600 hover:text-white text-purple-400 font-medium py-3 rounded-lg transition"
-                    >
-                        Continua senza registrazione
-                    </button>
+                    <div className="mt-8 border-t border-gray-700 pt-4 text-center">
+                        <p className="mb-3 text-sm text-gray-500">oppure</p>
+                        <button
+                            onClick={handleAnonimo}
+                            className="w-[70%] mx-auto block border border-purple-500/40 text-purple-300 hover:bg-gray-800 hover:border-purple-500 transition rounded-xl py-3 font-medium"
+                        >
+                            Continua senza registrazione
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
+
     );
 }

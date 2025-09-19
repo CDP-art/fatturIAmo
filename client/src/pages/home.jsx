@@ -29,7 +29,7 @@ export default function Home() {
           {/* CTA */}
           <button
             onClick={handleStart}
-            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:brightness-110 text-white font-semibold py-3 px-8 rounded-2xl shadow-lg transition-transform duration-300 hover:scale-105 active:scale-95 w-full sm:w-auto"
+            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:brightness-110 text-white font-semibold py-3 px-8 rounded-2xl shadow-lg transition-transform duration-300 hover:scale-105 active:scale-95 w-[70%] sm:w-auto"
           >
             🚀 Inizia ora
           </button>

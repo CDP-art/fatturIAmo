@@ -6,8 +6,12 @@ export async function estraiDatiParziali(promptUtente) {
   const key = (process.env.GEMINI_API_KEY || "").trim();
 
   if (!key) {
-    console.error("estraiDatiParziali: GEMINI_API_KEY mancante o vuota");
-    return null; // evito di chiamare Axios con una URL errata
+    // in produzione non loggo dettagli
+    if (process.env.NODE_ENV !== 'production') {
+      console.error("estraiDatiParziali: GEMINI_API_KEY mancante o vuota");
+    }
+    // ritorno un oggetto vuoto così non rompo il flusso a valle
+    return {};
   }
 
   // 2) Costruisco la URL in modo sicuro
@@ -51,6 +55,7 @@ Testo: ${JSON.stringify(promptUtente)}
     const raw = r.data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
     let jsonText = String(raw).trim();
 
+    // se per caso c'è testo extra, provo a prendere solo il blocco {}
     if (!jsonText.startsWith("{")) {
       const m = jsonText.match(/\{[\s\S]*\}/);
       jsonText = m ? m[0] : "{}";
@@ -66,7 +71,8 @@ Testo: ${JSON.stringify(promptUtente)}
       code: e?.code || e?.cause?.code,
       url: safeUrl,
     });
-    return null;
+    // fallback sicuro
+    return {};
   }
 }
 

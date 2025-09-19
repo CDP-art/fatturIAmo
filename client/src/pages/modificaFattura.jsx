@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
 
 // Lettura sicura da LocalStorage
 function safeGetLS(key, def = null) {
@@ -109,8 +110,26 @@ export default function ModificaFattura() {
 
     // Export
     function handleExportFattura() {
-        if (!form.numeroFattura || !form.data || form.prodotti.length === 0) {
-            alert("Compila tutti i campi obbligatori prima di proseguire");
+        if (!form.numeroFattura ||
+            !form.data ||
+            !form.clienteNome ||
+            !form.clientePiva ||
+            !form.clienteIndirizzo ||
+            form.prodotti.length === 0 ||
+            form.prodotti.some(p => !p.descrizione || p.prezzo <= 0 || p.quantita <= 0)
+        ) {
+            Swal.fire({
+                icon: "warning",
+                title: "Tutti i campi sono obbligatori",
+                text: "Compila tutti i campi prima di proseguire.",
+                customClass: {
+                    popup: "rounded-2xl shadow-xl bg-white",
+                    confirmButton:
+                        "bg-gradient-to-r from-purple-600 to-blue-600 hover:brightness-110 text-white font-semibold px-6 py-3 rounded-2xl shadow-md transition-transform hover:scale-105 active:scale-95",
+                },
+                buttonsStyling: false,
+                confirmButtonText: "Ok, capito",
+            });
             return;
         }
 
@@ -136,6 +155,13 @@ export default function ModificaFattura() {
         } catch { }
 
         navigate("/esporta", { state: { invoice }, replace: true });
+    }
+
+    function formatoEuro(numero) {
+        return Number(numero || 0).toLocaleString("it-IT", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
     }
 
     return (
@@ -286,7 +312,7 @@ export default function ModificaFattura() {
                         </div>
 
                         <div className="text-right text-2xl font-bold text-purple-600">
-                            Totale: € {totale.toLocaleString("it-IT", { minimumFractionDigits: 2 })}
+                            Totale: € {formatoEuro(totale)}
                         </div>
                     </div>
 

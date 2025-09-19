@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
 import IntroFornitore from "../components/IntroFornitore";
 import CaricamentoLogoFornitore from "../components/CaricamentoLogoFornitore";
 import DatiFornitore from "../components/DatiFornitore";
@@ -79,7 +80,20 @@ export default function Fornitore() {
 
         const isValid = /image\/(png|jpeg)/.test(file.type);
         if (!isValid) {
-            alert("Formato non supportato. Usa PNG o JPG.");
+            Swal.fire({
+                icon: "error",
+                title: "Formato non supportato",
+                text: "Usa PNG o JPG.",
+                customClass: {
+                    popup: "rounded-2xl shadow-xl bg-white",
+                    title: "text-gray-800 font-bold text-lg",
+                    htmlContainer: "text-gray-700 text-sm",
+                    confirmButton:
+                        "w-[60%] sm:w-auto bg-gradient-to-r from-purple-600 to-blue-600 hover:brightness-110 text-white font-semibold px-6 py-3 rounded-2xl shadow-md transition-transform hover:scale-105 active:scale-95 mx-auto",
+                },
+                buttonsStyling: false,
+                confirmButtonText: "Ok, capito",
+            });
             return;
         }
 
@@ -103,6 +117,43 @@ export default function Fornitore() {
         const fullIban = updatedBlocks.join("");
         saveSupplier({ ...supplier, ibanBlocks: updatedBlocks, iban: fullIban });
     };
+
+    function handleContinue(navigate) {
+        Swal.fire({
+            title: "Vuoi salvare i dati della tua azienda?",
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonText: "✅ Continua",
+            cancelButtonText: "↩️ Annulla",
+            reverseButtons: true, // per mettere "Continua" a destra
+            customClass: {
+                popup: "rounded-2xl shadow-xl bg-white max-w-lg w-[90%] sm:w-[400px]",
+                title: "text-gray-800 font-bold text-lg",
+                confirmButton:
+                    "bg-gradient-to-r from-purple-600 to-blue-600 hover:brightness-110 text-white font-semibold px-6 py-3 rounded-2xl shadow-md transition-transform hover:scale-105 active:scale-95",
+                cancelButton:
+                    "bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-6 py-3 rounded-2xl shadow-md transition-transform hover:scale-105 active:scale-95",
+                actions: "flex justify-between gap-4 mt-6",
+            },
+            buttonsStyling: false,
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Success alert
+                Swal.fire({
+                    icon: "success",
+                    title: "Dati salvati con successo!",
+                    showConfirmButton: false,
+                    timer: 1500,
+                    /* customClass: {
+                        popup: "rounded-2xl shadow-xl bg-white",
+                        title: "text-green-600 font-bold text-lg",
+                    }, */
+                });
+                navigate("/genera");
+            }
+        });
+    }
+
 
 
     return (
@@ -136,8 +187,10 @@ export default function Fornitore() {
                     placeholderTxt="Anteprima"
                     onLogoChange={onLogoChange}
                     proseguiClick={goNext}
+                    onBackClick={goBack}
                 />
             )}
+
 
             {/* STEP 3: Dati azienda */}
             {step === 3 && supplier && (
@@ -147,13 +200,14 @@ export default function Fornitore() {
                     onChange={onChange}
                     onIbanChange={onIbanChange}
                     canContinue={canContinue}
-                    onContinue={() => navigate("/genera")}
+                    onContinue={() => handleContinue(navigate)}
                     onReset={() => saveSupplier(emptySupplier)}
+                    onBack={goBack}   // ⬅️ aggiunto
                 />
             )}
 
             {/* Bottone "Indietro" solo dallo step 2 in poi */}
-            {step > 1 && (
+            {/*  {step > 1 && (
                 <div className="fixed bottom-6 left-1/2 -translate-x-1/2">
                     <button
                         onClick={goBack}
@@ -162,7 +216,7 @@ export default function Fornitore() {
                         ↩️ Indietro
                     </button>
                 </div>
-            )}
+            )} */}
 
             {/* Footer */}
             {/*   <footer className="py-6 text-center text-xs text-gray-500">

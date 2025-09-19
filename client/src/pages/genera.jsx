@@ -46,7 +46,10 @@ export default function Genera() {
                 {preview && (
                     <>
                         <FatturaIA rawOutput={preview} />
-                        <OutputButtons onReset={handleReset} onEdit={handleEdit} />
+                        <OutputButtons
+                            onReset={handleReset}
+                            onEdit={handleEdit}
+                        />
                     </>
                 )}
             </div>

@@ -1,24 +1,6 @@
-import express from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import { generaFattura } from './routes/fattura.js';
+import app from './app.js';
 
-dotenv.config();
-console.log("🔑 Gemini API Key caricata?", process.env.GEMINI_API_KEY ? "✅ Sì" : "❌ No");
-
-
-
-const app = express();
 const PORT = process.env.PORT || 8000;
-
-app.use(cors());
-app.use(express.json({ limit: '10mb' }));
-
-app.get('/', (req, res) => {
-    res.send('Server attivo! 🚀');
-});
-
-app.post('/genera', generaFattura);
 
 app.listen(PORT, () => {
     console.log(`✅ Server in ascolto su http://localhost:${PORT}`);

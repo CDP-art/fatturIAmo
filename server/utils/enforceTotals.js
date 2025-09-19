@@ -4,6 +4,22 @@
 export const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
 
 /**
+ * Converte stringhe tipo "1.000,50" in numeri. Restituisce null se non parsabile.
+ * (ora è esportata per riuso fuori da questo file)
+ */
+export function coerceNumber(val) {
+    if (val == null) return null;
+    if (typeof val === "number") return val;
+    if (typeof val === "string") {
+        const cleaned = val.replace(/\./g, "").replace(",", ".").replace(/[^\d.]/g, "");
+        const n = Number(cleaned);
+        return Number.isNaN(n) ? null : n;
+    }
+    const n = Number(val);
+    return Number.isNaN(n) ? null : n;
+}
+
+/**
  * Normalizza la bozza SENZA sovrascrivere prezzi già presenti.
  * Usa vincoli.totaleLordo solo se:
  * - c'è 1 sola riga
@@ -34,21 +50,6 @@ export function normalizzaFattura(fattura) {
 }
 
 /**
- * Converte stringhe tipo "1.000,50" in numeri. Restituisce null se non parsabile.
- */
-function coerceNumber(val) {
-    if (val == null) return null;
-    if (typeof val === "number") return val;
-    if (typeof val === "string") {
-        const cleaned = val.replace(/\./g, "").replace(",", ".").replace(/[^\d.]/g, "");
-        const n = Number(cleaned);
-        return Number.isNaN(n) ? null : n;
-    }
-    const n = Number(val);
-    return Number.isNaN(n) ? null : n;
-}
-
-/**
  * Calcola imponibile, IVA e totale della fattura.
  * Modalità:
  * - NETTO (default): prezzi riga = imponibile
@@ -70,7 +71,7 @@ export function enforceTotals(fattura, totaleLordo, aliquotaIva = 22) {
 
     const prezziIvaInclusa = Boolean(d?.opzioni?.prezziIvaInclusa);
 
-    // Normalizza array prodotti (copiamo i campi utili e puliamo i numeri)
+    // Normalizza array prodotti (copio i campi utili e pulisco i numeri)
     d.prodotti = (d.prodotti || []).map((p) => ({
         ...p,
         quantita: Number(p.quantita) || 0,
@@ -81,23 +82,20 @@ export function enforceTotals(fattura, totaleLordo, aliquotaIva = 22) {
     let imponibile = 0;
 
     if (prezziIvaInclusa) {
-        // I prezzi forniti sono LORDI per unità.
-        // Per evitare il "doppio calcolo" nei passaggi successivi,
-        // convertiamo il campo principale `prezzo` a NETTO
-        // e salviamo il lordo separatamente in `prezzoLordo`.
+        // Prezzi di riga sono LORDI: li converto a NETTI e salvo entrambi
         d.prodotti = d.prodotti.map((p) => {
             const prezzoLordo = p.prezzo;
             const prezzoNetto = round2(prezzoLordo / (1 + vat));
             return {
                 ...p,
                 prezzoLordo,
-                prezzo: prezzoNetto, // d'ora in poi `prezzo` è NETTO (così se qualcuno ricalcola IVA, il totale resta coerente)
+                prezzo: prezzoNetto, // d'ora in poi `prezzo` è NETTO per i calcoli
                 totaleRigaNetto: round2(p.quantita * prezzoNetto),
                 totaleRigaLordo: round2(p.quantita * prezzoLordo),
             };
         });
 
-        // Imponibile = somma netti; Totale lordo = somma lordi (o il totale richiesto)
+        // Imponibile = somma netti; totale lordo = somma lordi (o il valore richiesto)
         imponibile = round2(d.prodotti.reduce((acc, p) => acc + p.totaleRigaNetto, 0));
 
         const sommaLordi = round2(d.prodotti.reduce((acc, p) => acc + p.totaleRigaLordo, 0));
@@ -116,7 +114,7 @@ export function enforceTotals(fattura, totaleLordo, aliquotaIva = 22) {
         d.prodotti.reduce((acc, p) => acc + round2(p.quantita * p.prezzo), 0)
     );
 
-    // Se c'è un totale lordo richiesto, prova ad allineare l'ultima riga
+    // Se c'è un totale lordo richiesto, adeguo solo l'ultima riga (senza andare sotto zero)
     if (totaleLordo != null && !Number.isNaN(totaleLordo) && d.prodotti.length > 0) {
         const targetImponibile = round2(totaleLordo / (1 + vat));
         const lastIdx = d.prodotti.length - 1;
@@ -131,10 +129,9 @@ export function enforceTotals(fattura, totaleLordo, aliquotaIva = 22) {
         const quantitaUltima = last.quantita || 1;
         const nuovoPrezzo = round2(differenzaUltimaRiga / quantitaUltima);
 
-        // Evita prezzi negativi: se servirebbe andare sotto zero, ignora l'aggiustamento
         if (nuovoPrezzo >= 0) {
             last.prezzo = nuovoPrezzo;
-            // Ricalcola imponibile
+            // ricalcolo imponibile
             imponibile = round2(
                 d.prodotti.reduce((acc, p) => acc + round2(p.quantita * p.prezzo), 0)
             );
