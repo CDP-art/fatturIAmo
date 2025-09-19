@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { Helmet } from "react-helmet";
 import { useLocation, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 
@@ -166,6 +167,39 @@ export default function ModificaFattura() {
 
     return (
         <React.Fragment>
+            <Helmet>
+                <title>Modifica Fattura - FatturIAmo</title>
+                <meta
+                    name="description"
+                    content="Modifica la fattura generata: correggi descrizioni, quantità, prezzi e dati cliente per esportarla in PDF o XML."
+                />
+                <meta
+                    name="keywords"
+                    content="modifica fattura, editor fattura, fattura personalizzata, aggiorna fattura, FatturIAmo"
+                />
+                <meta name="robots" content="index, follow" />
+                <meta name="author" content="Claudio De Paolis" />
+
+                {/* Open Graph */}
+                <meta property="og:title" content="Modifica Fattura - FatturIAmo" />
+                <meta
+                    property="og:description"
+                    content="Correggi, personalizza o completa la fattura generata automaticamente con l’IA."
+                />
+                <meta property="og:type" content="website" />
+                <meta property="og:url" content="https://fatturiamo.ai/modifica" />
+                <meta property="og:image" content="https://fatturiamo.ai/og-modifica.png" />
+
+                {/* Twitter Card */}
+                <meta name="twitter:card" content="summary_large_image" />
+                <meta name="twitter:title" content="Modifica Fattura - FatturIAmo" />
+                <meta
+                    name="twitter:description"
+                    content="Modifica la tua fattura: aggiungi righe, cambia IVA, aggiorna il cliente e scarica il PDF aggiornato."
+                />
+                <meta name="twitter:image" content="https://fatturiamo.ai/og-modifica.png" />
+            </Helmet>
+
             {/* Contenitore principale */}
             <div className="relative min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-blue-300 via-white to-purple-400 animate-gradient">
                 {/* Overlay che copre tutta la viewport */}

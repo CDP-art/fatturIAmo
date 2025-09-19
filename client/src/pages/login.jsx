@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet";
 import axios from "axios";
 
 export default function Accesso() {
@@ -29,6 +30,38 @@ export default function Accesso() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-300 via-indigo-100 to-purple-300 bg-animated-gradient flex items-center justify-center px-4">
+            <Helmet>
+                <title>Accedi a FatturIAmo - Area Riservata</title>
+                <meta
+                    name="description"
+                    content="Accedi a FatturIAmo per generare fatture con l’intelligenza artificiale. Oppure continua senza registrarti."
+                />
+                <meta
+                    name="keywords"
+                    content="login, accesso, area riservata, fatture AI, generatore fatture, fatturiamo accesso"
+                />
+                <meta name="robots" content="index, follow" />
+                <meta name="author" content="Claudio De Paolis" />
+
+                {/* Open Graph */}
+                <meta property="og:title" content="Accedi a FatturIAmo - Area Riservata" />
+                <meta
+                    property="og:description"
+                    content="Entra nel tuo account o continua come ospite per generare fatture con l’intelligenza artificiale."
+                />
+                <meta property="og:type" content="website" />
+                <meta property="og:url" content="https://fatturiamo.ai/accesso" />
+                <meta property="og:image" content="https://fatturiamo.ai/og-accesso.png" />
+
+                {/* Twitter Card */}
+                <meta name="twitter:card" content="summary_large_image" />
+                <meta name="twitter:title" content="Accedi a FatturIAmo - Area Riservata" />
+                <meta
+                    name="twitter:description"
+                    content="Accedi o prosegui senza registrazione per creare fatture in modo semplice e veloce con l’IA."
+                />
+                <meta name="twitter:image" content="https://fatturiamo.ai/og-accesso.png" />
+            </Helmet>
             <div className="absolute inset-0 bg-black/20 z-0 flex items-center justify-center">
                 <div className="bg-black/90 backdrop-blur-md text-white rounded-2xl shadow-2xl py-10 px-6 sm:px-8 w-full max-w-md border border-purple-500/30 mx-4 my-6">
                     <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8">
