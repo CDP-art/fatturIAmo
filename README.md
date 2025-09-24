@@ -44,8 +44,11 @@ Progettata per freelance, consulenti e piccoli business, sfrutta l’Intelligenz
    ```bash
    npm install
 
-3. Avvia il progetto (client e server)
+3. Avvia il progetto /fatturiamo/client
    ```bash
    npm run dev
 
+4. Avvia il progetto /fatturiamo/server
+      ```bash
+   npm run dev
 
