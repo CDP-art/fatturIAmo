@@ -57,6 +57,8 @@ export default function PromptInput({ onGenerated }) {
     const [isLoading, setIsLoading] = useState(false);
     const [err, setErr] = useState("");
 
+    const maxChars = 2000;
+
     const handleGenerate = async () => {
         setErr("");
 
@@ -64,7 +66,7 @@ export default function PromptInput({ onGenerated }) {
             Swal.fire({
                 icon: "warning",
                 title: "Inserisci i dettagli della fattura prima di generare.",
-                confirmButtonText: "Ok, capito",
+                confirmButtonText: "Ok, ho capito",
                 customClass: {
                     popup: "rounded-2xl shadow-xl bg-white max-w-lg w-[90%] sm:w-[400px]",
                     title: "text-gray-800 font-bold text-lg",
@@ -123,13 +125,26 @@ export default function PromptInput({ onGenerated }) {
 
     return (
         <div className="flex flex-col gap-4 mt-6 w-full max-w-2xl mx-auto">
-            <textarea
-                className="w-full h-40 p-4 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none text-sm sm:text-base"
-                placeholder="✍️ Es: 'Crea una fattura di 500€ con IVA inclusa per consulenza marketing'."
-                aria-label="Inserisci i dettagli della fattura"
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-            />
+            <div className="relative w-full">
+                <textarea
+                    className="w-full h-40 p-4 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none text-sm sm:text-base"
+                    placeholder="✍️ Es: 'Crea una fattura di 500€ con IVA inclusa per consulenza marketing'."
+                    aria-label="Inserisci i dettagli della fattura"
+                    value={text}
+                    onChange={(e) => {
+                        if (e.target.value.length <= maxChars) {
+                            setText(e.target.value);
+                        }
+                    }}
+                />
+                <span
+                    className={`absolute bottom-2 right-3 text-xs ${text.length >= maxChars ? "text-red-600" : "text-gray-400"
+                        }`}
+                >
+                    {text.length} / {maxChars}
+                </span>
+            </div>
+
             {err && <p className="text-red-600 text-sm">{err}</p>}
 
             <button
