@@ -54,7 +54,9 @@ export async function generaFattura(req, res) {
             normalizzaFattura(draft);
         } catch {
             console.error("Parse Gemini JSON failed:", jsonText);
-            return res.status(502).json({ ok: false, error: "INVALID_AI_JSON" });
+            return res
+                .status(502)
+                .json({ ok: false, error: "INVALID_AI_JSON" });
         }
 
         // 5) Mappo righe -> prodotti { descrizione, quantita, prezzo }
@@ -131,6 +133,8 @@ export async function generaFattura(req, res) {
         if (process.env.NODE_ENV !== 'production') {
             console.error("GENERA:", err?.response?.data || err);
         }
-        return res.status(502).json({ ok: false, error: code });
+        return res
+            .status(502)
+            .json({ ok: false, error: code });
     }
 }

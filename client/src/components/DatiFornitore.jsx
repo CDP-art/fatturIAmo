@@ -10,6 +10,7 @@ export default function DatiFornitore({
     onReset,
     onBack,
 }) {
+    console.log("DatiFornitore supplier:", supplier);
     return (
         <section
             ref={innerRef}
@@ -41,9 +42,10 @@ export default function DatiFornitore({
                             <label className="block mb-1 text-sm">Partita IVA</label>
                             <input
                                 className="w-full border rounded-xl p-3"
-                                placeholder="11 cifre"
+                                placeholder="11 cifre, solo numeri"
                                 value={supplier.piva}
                                 onChange={onChange("piva")}
+                                maxLength={11}
                             />
                         </div>
 
@@ -63,10 +65,18 @@ export default function DatiFornitore({
                         <div>
                             <label className="block mb-1 text-sm">Telefono</label>
                             <input
+                                type="tel"
+                                inputMode="numeric"
+                                pattern="[0-9+ ]*" // Permette numeri, + e spazi
                                 className="w-full border rounded-xl p-3"
                                 placeholder="Es. +39 333 1234567"
                                 value={supplier.telefono}
-                                onChange={onChange("telefono")}
+                                onChange={(e) => {
+                                    // accetta solo numeri, + e spazi
+                                    const cleaned = e.target.value.replace(/[^0-9+ ]/g, "");
+                                    onChange("telefono")({ target: { value: cleaned } });
+                                }}
+                                maxLength={15} // Limite di 15 caratteri
                             />
                         </div>
 
@@ -92,53 +102,50 @@ export default function DatiFornitore({
                             />
                         </div>
 
-                        {/* IBAN suddiviso */}
+                        {/* IBAN input */}
                         <div className="sm:col-span-2">
+                            {/* Label for the IBAN input */}
                             <label className="block mb-1 text-sm">IBAN</label>
-                            <div className="grid grid-cols-6 gap-2">
-                                <input
-                                    className="border rounded-xl p-3 text-center"
-                                    maxLength={2}
-                                    placeholder="IT"
-                                    value={supplier.ibanCountry || ""}
-                                    onChange={onChange("ibanCountry")}
-                                />
-                                <input
-                                    className="border rounded-xl p-3 text-center"
-                                    maxLength={2}
-                                    placeholder="60"
-                                    value={supplier.ibanCheck || ""}
-                                    onChange={onChange("ibanCheck")}
-                                />
-                                <input
-                                    className="border rounded-xl p-3 text-center"
-                                    maxLength={1}
-                                    placeholder="X"
-                                    value={supplier.ibanCin || ""}
-                                    onChange={onChange("ibanCin")}
-                                />
-                                <input
-                                    className="border rounded-xl p-3 text-center"
-                                    maxLength={5}
-                                    placeholder="05428"
-                                    value={supplier.ibanAbi || ""}
-                                    onChange={onChange("ibanAbi")}
-                                />
-                                <input
-                                    className="border rounded-xl p-3 text-center"
-                                    maxLength={5}
-                                    placeholder="11101"
-                                    value={supplier.ibanCab || ""}
-                                    onChange={onChange("ibanCab")}
-                                />
-                                <input
-                                    className="border rounded-xl p-3 text-center"
-                                    maxLength={12}
-                                    placeholder="000000123456"
-                                    value={supplier.ibanConto || ""}
-                                    onChange={onChange("ibanConto")}
-                                />
+                            {/* Mobile: single input for full IBAN */}
+                            <input
+                                type="text"
+                                className="w-full border rounded-xl p-3 sm:hidden"
+                                placeholder="IT60 0542 8110 1000 0001 2345 6"
+                                value={supplier.iban || ""}
+                                onChange={onChange("iban")}
+                                maxLength={27} // Max length of IBAN
+                            />
+                            {/* Desktop: split input for IBAN in blocks of 4 characters */}
+                            <div className="hidden sm:grid grid-cols-4 md:grid-cols-7 gap-2">
+                                {Array(7).fill(0).map((_, index) => {
+                                    const ibanBlock = supplier.iban ? supplier.iban.slice(index * 4, index * 4 + 4) : "";
+                                    const placeholders = ["IT60", "0542", "8110", "1000", "0001", "2345", "6"];
+                                    return (
+                                        <input
+                                            key={index}
+                                            type="text"
+                                            maxLength={4}
+                                            className="flex-1 border rounded-xl p-2 text-sm text-center"
+                                            placeholder={placeholders[index]}
+                                            value={ibanBlock}
+                                            onChange={(e) => {
+                                                const val = e.target.value.toUpperCase();
+                                                let newIban = supplier.iban || "";
+                                                if (newIban.length < 28) {
+                                                    newIban = newIban.padEnd(28, " ");
+                                                }
+                                                newIban =
+                                                    newIban.substring(0, index * 4) +
+                                                    val.padEnd(4, " ").substring(0, 4) +
+                                                    newIban.substring(index * 4 + 4);
+                                                newIban = newIban.trimEnd();
+                                                onChange("iban")({ target: { value: newIban } });
+                                            }}
+                                        />
+                                    );
+                                })}
                             </div>
+                            {/* This input lets the user enter the full IBAN on mobile, or split blocks on desktop */}
                         </div>
                     </div>
 

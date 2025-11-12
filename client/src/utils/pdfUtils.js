@@ -282,37 +282,80 @@ function drawTotals(doc, totals, startY) {
 function drawPayToSection(doc, supplier, invoice, startY) {
     let y = startY;
 
-    const lines = [];
-    if (supplier?.banca) lines.push(`Banca: ${supplier.banca}`);
-    if (supplier?.intestatario) {
-        lines.push(`Intestatario: ${supplier.intestatario}`);
-    } else if (supplier?.ragioneSociale) {
-        lines.push(`Intestatario: ${supplier.ragioneSociale}`);
-    }
-    if (supplier?.iban) {
-        lines.push(`IBAN: ${supplier.iban.toUpperCase()}`);
-    } else if (invoice?.iban) {
-        lines.push(`IBAN: ${invoice.iban.toUpperCase()}`);
+    // Geometria: due colonne con stessi margini esterni
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const xLeftEdge = MARGIN.left;
+    const xRightEdge = pageWidth - MARGIN.right;
+    const totalInner = xRightEdge - xLeftEdge;
+    const gutter = 28;                               // spazio centrale tra le colonne
+    const colWidth = (totalInner - gutter) / 2;
+
+    const colLeftX = xLeftEdge;                     // Colonna SX = Dati per il pagamento
+    const colRightX = xLeftEdge + colWidth + gutter; // Colonna DX = Metodo di pagamento
+
+    // --- Colonna DX: metodo di pagamento selezionato
+    let metodoLabel = "";
+    switch (invoice?.metodoPagamento) {
+        case "contanti": metodoLabel = "Contanti alla consegna"; break;
+        case "bonifico_anticipato": metodoLabel = "Bonifico bancario anticipato"; break;
+        case "bonifico_30gg": metodoLabel = "Bonifico bancario 30 gg data fattura"; break;
+        case "bonifico_60gg": metodoLabel = "Bonifico bancario 60 gg data fattura"; break;
+        case "contrassegno": metodoLabel = "Pagamento in contrassegno"; break;
+        case "rateale": metodoLabel = "Pagamento rateale"; break;
+        case "riba": metodoLabel = "Ricevuta bancaria (Ri.Ba.)"; break;
+        default: metodoLabel = invoice?.metodoPagamento || ""; break;
     }
 
-    if (lines.length === 0) return y;
+    // --- Colonna SX: righe "Dati per il pagamento"
+    const leftLines = [];
+    if (supplier?.banca) leftLines.push(`Banca: ${supplier.banca}`);
+    if (supplier?.intestatario) leftLines.push(`Intestatario: ${supplier.intestatario}`);
+    else if (supplier?.ragioneSociale) leftLines.push(`Intestatario: ${supplier.ragioneSociale}`);
+    if (supplier?.iban) leftLines.push(`IBAN: ${String(supplier.iban).toUpperCase()}`);
+    else if (invoice?.iban) leftLines.push(`IBAN: ${String(invoice.iban).toUpperCase()}`);
 
+    // Se non c'è nulla da mostrare, esci
+    if (leftLines.length === 0 && !metodoLabel) return y;
+
+    // --- Titoli (stile coerente e allineato a sinistra)
     doc.setFontSize(16);
     doc.setFont(undefined, "bold");
     doc.setTextColor(30, 30, 30);
-    doc.text("DATI PER IL PAGAMENTO", MARGIN.left, y);
+    doc.text("DATI PER IL PAGAMENTO:", colLeftX, y, { align: "left" });
+    doc.text("METODO DI PAGAMENTO:", colRightX, y, { align: "left" });
 
-    y += 16;
+    // --- Spazio sotto i titoli (leggermente aumentato)
+    y += 18;
     doc.setFontSize(10);
     doc.setFont(undefined, "normal");
     doc.setTextColor(0);
 
-    lines.forEach((line, i) => {
-        doc.text(line, MARGIN.left, y + i * 14);
+    // --- Contenuto colonna SX
+    let leftY = y;
+    leftLines.forEach((raw) => {
+        const wrapped = doc.splitTextToSize(raw, colWidth);
+        wrapped.forEach((line) => {
+            doc.text(line, colLeftX, leftY, { align: "left" });
+            leftY += 13;
+        });
     });
 
-    return y;
+    // --- Contenuto colonna DX
+    let rightY = y;
+    if (metodoLabel) {
+        const wrappedRight = doc.splitTextToSize(metodoLabel, colWidth);
+        wrappedRight.forEach((line) => {
+            doc.text(line, colRightX, rightY, { align: "left" });
+            rightY += 13;
+        });
+    }
+
+    // --- Allinea la prossima sezione alla colonna più lunga
+    const nextY = Math.max(leftY, rightY) + 4;
+    return nextY;
 }
+
+
 
 
 // --- Footer ---

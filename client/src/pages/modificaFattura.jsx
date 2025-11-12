@@ -33,6 +33,7 @@ function buildInitialForm(invoice) {
             prezzo: Number(p?.prezzo ?? p?.tariffa ?? 0),
         })),
         aliquotaIva: Number(inv.aliquotaIva ?? 22),
+        metodoPagamento: inv.metodoPagamento || "",
     };
 }
 
@@ -148,6 +149,7 @@ export default function ModificaFattura() {
             iva: Number(iva.toFixed(2)),
             totale: Number(totale.toFixed(2)),
             aliquotaIva: Number(form.aliquotaIva),
+            metodoPagamento: form.metodoPagamento,
         };
 
         // Salvo anche come draft aggiornato (così /esporta o refresh non perdono i dati)
@@ -224,12 +226,14 @@ export default function ModificaFattura() {
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-600 mb-1">Data</label>
-                            <input
-                                type="text"
-                                value={form.data || ""}
-                                onChange={setField("data")}
-                                className="w-full border border-gray-300 rounded-xl px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                            />
+                            <div className="relative">
+                                <input
+                                    type="date"
+                                    value={form.data || ""}
+                                    onChange={setField("data")}
+                                    className="w-full border border-gray-300 rounded-xl px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                />
+                            </div>
                         </div>
                     </div>
 
@@ -267,7 +271,7 @@ export default function ModificaFattura() {
 
                     {/* Prodotti */}
                     <h3 className="text-lg font-semibold mb-4">🛒 Prodotti / Servizi</h3>
-                    <div className="space-y-6 mb-10">
+                    <div className="space-y-6 mb-8">
                         {form.prodotti.map((item, i) => (
                             <div key={i} className="p-4 border border-gray-200 rounded-2xl shadow-sm bg-gray-50 relative">
                                 <div className="flex flex-col gap-4">
@@ -327,6 +331,39 @@ export default function ModificaFattura() {
                                 Nessuna riga presente. Aggiungi un prodotto/servizio con il pulsante “+”.
                             </div>
                         )}
+                    </div>
+                    {/* 🧾 Metodo di pagamento */}
+                    <h3 className="text-lg font-semibold mb-4">🧾 Metodo di pagamento</h3>
+
+                    <div className="mb-6">
+                        <label
+                            htmlFor="metodoPagamento"
+                            className="block text-sm font-medium text-gray-600 mb-2"
+                        >
+                            Scegli il metodo di pagamento del cliente
+                        </label>
+
+                        <select
+                            id="metodoPagamento"
+                            name="metodoPagamento"
+                            value={form.metodoPagamento}
+                            onChange={(e) =>
+                                setForm((prev) => ({ ...prev, metodoPagamento: e.target.value }))
+                            }
+                            className="w-full border border-gray-300 rounded-lg py-2 px-1 focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                        >
+                            <option value="" disabled>
+                                Seleziona un metodo
+                            </option>
+                            <option value="contanti">Contanti alla consegna</option>
+                            <option value="bonifico_anticipato">Bonifico bancario anticipato</option>
+                            <option value="bonifico_30gg">Bonifico bancario 30 gg data fattura</option>
+                            <option value="bonifico_60gg">Bonifico bancario 60 gg data fattura</option>
+                            <option value="contrassegno">Pagamento in contrassegno</option>
+                            <option value="rateale">Pagamento rateale</option>
+                            <option value="riba">Ricevuta bancaria (Ri.Ba.)</option>
+                        </select>
+
                     </div>
 
                     {/* Aliquota + Totale */}

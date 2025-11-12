@@ -27,8 +27,7 @@ export default function Fornitore() {
         email: "",
         telefono: "",
         logoDataUrl: "",
-        ibanBlocks: ["", "", "", "", "", "", ""], // array di blocchi
-        iban: "", // stringa completa (ricostruita dai blocchi)
+        iban: "", // IBAN unico dell'azienda
     }
 
 
@@ -50,22 +49,15 @@ export default function Fornitore() {
 
     // Salvataggio semplice
     const saveSupplier = (next) => {
-
-        const ibanCompleto =
-            (next.ibanCountry || "") +
-            (next.ibanCheck || "") +
-            (next.ibanCin || "") +
-            (next.ibanAbi || "") +
-            (next.ibanCab || "") +
-            (next.ibanConto || "");
-
-        const supplierConIban = { ...next, iban: ibanCompleto };
-
-        setSupplier(supplierConIban);
+        const supplierConIban = {
+            ...next,
+            iban: (next.iban || "").replace(/\s+/g, "").toUpperCase()
+        };
         try {
-            localStorage.setItem("fatturiamo.supplier", JSON.stringify(next));
-        } catch {
-            // Se fallisce il salvataggio non blocco l'app
+            setSupplier(supplierConIban);
+            localStorage.setItem("fatturiamo.supplier", JSON.stringify(supplierConIban));
+        } catch (error) {
+            console.error("Errore nel salvataggio dati del fornitore:", error);
         }
     };
 
@@ -105,21 +97,21 @@ export default function Fornitore() {
         reader.readAsDataURL(file);
     };
 
-    // Condizione per poter continuare dallo step 3
-    const canContinue = supplier?.ragioneSociale?.trim().length > 0;
+    // Qui controlliamo solo che i campi non siano vuoti
+    const canContinue =
+        supplier?.ragioneSociale?.trim() &&
+        supplier?.piva?.trim() &&
+        supplier?.email?.trim() &&
+        supplier?.telefono?.trim() &&
+        supplier?.citta?.trim() &&
+        supplier?.indirizzo?.trim() &&
+        supplier?.iban?.trim();
 
     // Funzioni per cambiare step
     const goNext = () => setStep((prev) => Math.min(prev + 1, 3));
     const goBack = () => setStep((prev) => Math.max(prev - 1, 1));
 
-    const onIbanChange = (index, value) => {
-        const updatedBlocks = [...supplier.ibanBlocks];
-        updatedBlocks[index] = value.toUpperCase(); // forza maiuscole
-        const fullIban = updatedBlocks.join("");
-        saveSupplier({ ...supplier, ibanBlocks: updatedBlocks, iban: fullIban });
-    };
-
-    function handleContinue(navigate) {
+    function handleContinue() {
         Swal.fire({
             title: "Vuoi salvare i dati della tua azienda?",
             icon: "question",
@@ -233,9 +225,8 @@ export default function Fornitore() {
                         titolo="Dati dell'azienda"
                         supplier={supplier}
                         onChange={onChange}
-                        onIbanChange={onIbanChange}
                         canContinue={canContinue}
-                        onContinue={() => handleContinue(navigate)}
+                        onContinue={handleContinue}
                         onReset={() => saveSupplier(emptySupplier)}
                         onBack={goBack}   // ⬅️ aggiunto
                     />

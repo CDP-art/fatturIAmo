@@ -2,6 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import PrivacyModal from "../components/privacyModel";
+import GeminiLogo from "../images/gemini-logo.jpeg";
 
 export default function Home({ privacyChoice, setPrivacyChoice }) {
   const navigate = useNavigate();
@@ -92,16 +93,27 @@ export default function Home({ privacyChoice, setPrivacyChoice }) {
             </div>
           </main>
 
-          <footer className="py-6 text-center text-sm text-gray-500">
-            Designed & developed by{" "}
-            <a
-              href="https://www.linkedin.com/in/claudiodepaolis/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-purple-600 hover:underline font-medium"
-            >
-              {myName}
-            </a>
+          <footer className="py-6 text-center text-sm text-gray-500 space-y-2">
+            <p>
+              Designed & developed by{" "}
+              <a
+                href="https://www.linkedin.com/in/claudiodepaolis/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-purple-600 hover:underline font-medium"
+              >
+                Claudio De Paolis
+              </a>
+            </p>
+
+            <div className="flex items-center justify-center gap-2 text-gray-500">
+              <span className="text-base font-semibold tracking-tight">Powered by</span>
+              <img
+                src={GeminiLogo}
+                alt="Gemini logo"
+                className="w-20 h-auto"
+              />
+            </div>
           </footer>
         </div>
       </div>
