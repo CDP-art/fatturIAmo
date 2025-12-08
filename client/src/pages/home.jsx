@@ -1,4 +1,5 @@
 import React from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import PrivacyModal from "../components/privacyModel";
@@ -10,6 +11,16 @@ export default function Home({ privacyChoice, setPrivacyChoice }) {
 
   const privacyAccepted = privacyChoice === true;
   const myName = "Claudio De Paolis";
+  const [showPrivacy, setShowPrivacy] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowPrivacy(true);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
 
   return (
     <React.Fragment>
@@ -46,8 +57,8 @@ export default function Home({ privacyChoice, setPrivacyChoice }) {
       </Helmet>
 
       <div className="relative">
-        {/* Mostra la PrivacyModal se l’utente non ha ancora scelto */}
-        {privacyChoice === null && (
+        {/* Mostro la PrivacyModal se l’utente non ha ancora scelto */}
+        {showPrivacy && privacyChoice === null && (
           <PrivacyModal
             onAccept={() => setPrivacyChoice(true)}
             onReject={() => setPrivacyChoice(false)}

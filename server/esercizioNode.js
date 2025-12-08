@@ -14,13 +14,6 @@ const PORT = 8000;
 
 */
 
-//TODO Pseudo-codice:
-//TODO Creare array di oggetti con nome e id
-//TODO Creare l'endpoint GET /api/users app.get
-//TODO Creare l'endpoint POST /api/users app.post
-//TODO Gestire gli errori
-//TODO app.listen(8000)
-
 let users = [
     {
         id: 1,

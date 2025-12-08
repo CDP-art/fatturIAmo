@@ -1,5 +1,3 @@
-// utils/enforceTotals.js
-
 // Arrotonda a 2 decimali in modo sicuro
 export const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
 

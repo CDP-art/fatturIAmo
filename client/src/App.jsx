@@ -5,7 +5,7 @@ const Home = lazy(() => import("./pages/home"));
 const Demo = lazy(() => import("./pages/demo"));
 const Genera = lazy(() => import("./pages/genera"));
 const ModificaFattura = lazy(() => import("./pages/modificaFattura"));
-const Accesso = lazy(() => import("./pages/login"));
+//const Accesso = lazy(() => import("./pages/login"));
 const EsportaFattura = lazy(() => import("./pages/esportaFattura"));
 const Fornitore = lazy(() => import("./pages/fornitore"));
 const Successo = lazy(() => import("./pages/endPage"));
@@ -47,7 +47,7 @@ function App() {
                     />
 
                     <Route path="/modifica" element={<ModificaFattura />} />
-                    <Route path="/accesso" element={<Accesso />} />
+                    {/* <Route path="/accesso" element={<Accesso />} /> */}
                     <Route path="/esporta" element={<EsportaFattura />} />
                     <Route path="/fornitore" element={<Fornitore />} />
                     <Route path="/endpage" element={<Successo />} />

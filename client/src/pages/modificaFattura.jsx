@@ -112,11 +112,13 @@ export default function ModificaFattura() {
 
     // Export
     function handleExportFattura() {
-        if (!form.numeroFattura ||
+        if (
+            !form.numeroFattura ||
             !form.data ||
             !form.clienteNome ||
             !form.clientePiva ||
             !form.clienteIndirizzo ||
+            !form.metodoPagamento ||
             form.prodotti.length === 0 ||
             form.prodotti.some(p => !p.descrizione || p.prezzo <= 0 || p.quantita <= 0)
         ) {
@@ -152,13 +154,30 @@ export default function ModificaFattura() {
             metodoPagamento: form.metodoPagamento,
         };
 
-        // Salvo anche come draft aggiornato (così /esporta o refresh non perdono i dati)
+        // Salvo anche come draft aggiornato
         try {
             localStorage.setItem("fatturiamo.draft", JSON.stringify(invoice));
         } catch { }
 
-        navigate("/esporta", { state: { invoice }, replace: true });
+        const delay = 3000;
+        Swal.fire({
+            icon: "success",
+            title: "La tua fattura è pronta!",
+            text: "Puoi ora esportarla in PDF o XML.",
+            showConfirmButton: false,
+            timerProgressBar: true,
+            timer: delay,
+            customClass: {
+                popup: "rounded-2xl shadow-xl bg-white",
+                title: "text-green-600 font-bold text-lg",
+            },
+        });
+
+        setTimeout(() => {
+            navigate("/esporta", { state: { invoice }, replace: true });
+        }, delay);
     }
+
 
     function formatoEuro(numero) {
         return Number(numero || 0).toLocaleString("it-IT", {
