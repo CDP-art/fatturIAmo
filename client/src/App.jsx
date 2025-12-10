@@ -1,5 +1,7 @@
 import React, { lazy, Suspense, useState } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { AnalyticsTracker } from "./AnalyticsTracker";
+
 //import { useState } from "react";
 const Home = lazy(() => import("./pages/home"));
 const Demo = lazy(() => import("./pages/demo"));
@@ -19,6 +21,7 @@ function App() {
 
     return (
         <Router>
+            <AnalyticsTracker />
             <Suspense fallback={<div className="text-center mt-10">Caricamento...</div>}>
                 <Routes>
                     {/* Home riceve la gestione della privacy come prop */}
