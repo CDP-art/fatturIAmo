@@ -89,9 +89,19 @@ export default function PromptInput({ onGenerated }) {
                 telefono: supplierRaw.telefono || "",
             } : null;
 
-            const baseURL = import.meta?.env?.VITE_API_BASE_URL || "http://localhost:8000";
-            const { data } = await axios.post(`${baseURL}/genera`, { prompt: text, supplier }, { timeout: 15000 });
+            const isProd = import.meta.env.MODE === "production";
 
+            const baseURL =
+                import.meta.env?.VITE_API_BASE_URL ||
+                (isProd
+                    ? "https://fatturiamo-backend.onrender.com"
+                    : "http://localhost:8000");
+
+            const { data } = await axios.post(
+                `${baseURL}/genera`,
+                { prompt: text, supplier },
+                { timeout: 15000 }
+            );
             if (!data || data.ok !== true || !data.data) {
                 throw new Error(data?.error || "Risposta non valida dal server");
             }
