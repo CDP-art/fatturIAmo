@@ -56,6 +56,21 @@ export default function Fornitore() {
         try {
             setSupplier(supplierConIban);
             localStorage.setItem("fatturiamo.supplier", JSON.stringify(supplierConIban));
+            // Swal.fire({
+            //     icon: "info",
+            //     title: "Dati salvati su questo dispositivo",
+            //     text: "Queste informazioni vengono memorizzate nel browser che stai utilizzando.",
+            //     toast: true,
+            //     position: "bottom",
+            //     showConfirmButton: false,
+            //     timer: 2500,
+            //     timerProgressBar: true,
+            //     customClass: {
+            //         popup: "rounded-2xl shadow-lg bg-white",
+            //         title: "text-gray-800 font-semibold text-sm",
+            //         htmlContainer: "text-gray-600 text-xs",
+            //     },
+            // });
         } catch (error) {
             console.error("Errore nel salvataggio dati del fornitore:", error);
         }
@@ -228,7 +243,7 @@ export default function Fornitore() {
                         canContinue={canContinue}
                         onContinue={handleContinue}
                         onReset={() => saveSupplier(emptySupplier)}
-                        onBack={goBack}   // ⬅️ aggiunto
+                        onBack={goBack}
                     />
                 )}
 

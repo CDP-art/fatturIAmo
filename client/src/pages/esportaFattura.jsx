@@ -19,7 +19,6 @@ function safeGetLS(key, def = null) {
 export default function EsportaFatturaPDF() {
     const navigate = useNavigate();
     const location = useLocation();
-
     const invoiceFromState = location.state?.invoice || null;
     const invoiceFromLS = useMemo(() => safeGetLS("fatturiamo.draft", null), []);
     const invoice = invoiceFromState || invoiceFromLS;
@@ -29,8 +28,6 @@ export default function EsportaFatturaPDF() {
     }, [invoice, navigate]);
 
     if (!invoice) return null;
-
-    const delay = 2300;
 
     const handleGeneratePDF = () => {
         try {
@@ -42,6 +39,7 @@ export default function EsportaFatturaPDF() {
                 });
                 return;
             }
+
             generateInvoicePDF(invoice);
             Swal.fire({
                 icon: "success",
@@ -57,7 +55,8 @@ export default function EsportaFatturaPDF() {
 
             setTimeout(() => {
                 navigate("/endpage");
-            }, delay);
+            }, 2500);
+
         } catch (e) {
             console.error(e);
             Swal.fire({
@@ -102,7 +101,8 @@ export default function EsportaFatturaPDF() {
 
             setTimeout(() => {
                 navigate("/endpage");
-            }, delay);
+            }, 2500);
+
         } catch (e) {
             Swal.fire({
                 icon: "error",

@@ -48,8 +48,8 @@ export function generateInvoicePDF(invoice) {
         invoice?.terminiPagamento || "Pagamento a 30 giorni data fattura";
     const metodoPagamento = invoice?.metodoPagamento || "Bonifico bancario";
     const iban = supplier?.iban || invoice?.iban || "";
-    const sdi = supplier?.sdi || invoice?.sdi || "";
-    const pec = supplier?.pec || supplier?.email || "";
+    const sdiCliente = invoice?.cliente?.sdi || "";
+    const pecCliente = invoice?.cliente?.pec || "";
     const cfFornitore = supplier?.cf || "";
     const regimeFiscale = supplier?.regimeFiscale || "";
 
@@ -63,7 +63,7 @@ export function generateInvoicePDF(invoice) {
     cursorY = drawClientBox(doc, cliente, cursorY, dataFattura);
     cursorY = drawInvoiceInfoBox(
         doc,
-        { numero, dataFattura, terminiPagamento, metodoPagamento, iban, sdi, pec, cfFornitore, regimeFiscale },
+        { numero, dataFattura, terminiPagamento, metodoPagamento, iban, cfFornitore, regimeFiscale },
         cursorY
     );
     cursorY = drawItemsTable(doc, righe, cursorY);
@@ -177,8 +177,8 @@ function drawClientBox(doc, cliente, startY, dataFattura) {
         cliente?.indirizzo || "",
         cliente?.cap && cliente?.citta ? `${cliente.cap} ${cliente.citta}` : "",
         cliente?.piva ? `P.IVA: ${cliente.piva}` : "",
-        cliente?.cf ? `CF: ${cliente.cf}` : "",
-        cliente?.email || cliente?.pec || "",
+        cliente?.sdi ? `SDI: ${cliente.sdi}` : "",
+        cliente?.pec ? `PEC: ${cliente.pec}` : "",
     ].filter(Boolean);
 
     clienteLines.forEach((line, i) => {

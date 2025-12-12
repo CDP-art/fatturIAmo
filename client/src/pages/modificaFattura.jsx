@@ -26,6 +26,8 @@ function buildInitialForm(invoice) {
         data: inv.data || inv.dataFattura || "",
         clienteNome: cliente.nome || cliente.denominazione || "",
         clientePiva: cliente.piva || "",
+        clienteSdi: cliente.sdi || "",
+        clientePec: cliente.pec || "",
         clienteIndirizzo: cliente.indirizzo || "",
         prodotti: prodotti.map((p) => ({
             descrizione: p?.descrizione || "",
@@ -112,7 +114,11 @@ export default function ModificaFattura() {
 
     // Export
     function handleExportFattura() {
-        if (
+        const hasSdiOrPec =
+            String(form.clienteSdi || "").trim() ||
+            String(form.clientePec || "").trim();
+
+        const hasMissingRequiredFields =
             !form.numeroFattura ||
             !form.data ||
             !form.clienteNome ||
@@ -120,12 +126,31 @@ export default function ModificaFattura() {
             !form.clienteIndirizzo ||
             !form.metodoPagamento ||
             form.prodotti.length === 0 ||
-            form.prodotti.some(p => !p.descrizione || p.prezzo <= 0 || p.quantita <= 0)
-        ) {
+            form.prodotti.some(
+                (p) => !p.descrizione || p.prezzo <= 0 || p.quantita <= 0
+            );
+
+        if (!hasSdiOrPec) {
             Swal.fire({
                 icon: "warning",
-                title: "Tutti i campi sono obbligatori",
-                text: "Compila tutti i campi prima di proseguire.",
+                title: "Dato di recapito mancante",
+                text: "Inserisci almeno uno tra SDI o PEC del cliente.",
+                customClass: {
+                    popup: "rounded-2xl shadow-xl bg-white",
+                    confirmButton:
+                        "bg-gradient-to-r from-purple-600 to-blue-600 hover:brightness-110 text-white font-semibold px-6 py-3 rounded-2xl shadow-md transition-transform hover:scale-105 active:scale-95",
+                },
+                buttonsStyling: false,
+                confirmButtonText: "Ok, capito",
+            });
+            return;
+        }
+
+        if (hasMissingRequiredFields) {
+            Swal.fire({
+                icon: "warning",
+                title: "Campi mancanti",
+                text: "Compila tutti i campi obbligatori prima di proseguire.",
                 customClass: {
                     popup: "rounded-2xl shadow-xl bg-white",
                     confirmButton:
@@ -145,6 +170,8 @@ export default function ModificaFattura() {
                 nome: form.clienteNome,
                 piva: form.clientePiva,
                 indirizzo: form.clienteIndirizzo,
+                sdi: form.clienteSdi,
+                pec: form.clientePec,
             },
             prodotti: form.prodotti,
             imponibile: Number(imponibile.toFixed(2)),
@@ -159,7 +186,7 @@ export default function ModificaFattura() {
             localStorage.setItem("fatturiamo.draft", JSON.stringify(invoice));
         } catch { }
 
-        const delay = 3000;
+
         Swal.fire({
             icon: "success",
             title: "La tua fattura è pronta!",
@@ -175,7 +202,7 @@ export default function ModificaFattura() {
 
         setTimeout(() => {
             navigate("/esporta", { state: { invoice }, replace: true });
-        }, delay);
+        }, 4000);
     }
 
 
@@ -274,6 +301,24 @@ export default function ModificaFattura() {
                                 type="text"
                                 value={form.clientePiva || ""}
                                 onChange={setField("clientePiva")}
+                                className="w-full border border-gray-300 rounded-xl px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-600 mb-1">SDI</label>
+                            <input
+                                type="text"
+                                value={form.clienteSdi || ""}
+                                onChange={setField("clienteSdi")}
+                                className="w-full border border-gray-300 rounded-xl px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-600 mb-1">Pec</label>
+                            <input
+                                type="text"
+                                value={form.clientePec || ""}
+                                onChange={setField("clientePec")}
                                 className="w-full border border-gray-300 rounded-xl px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                             />
                         </div>
@@ -378,8 +423,6 @@ export default function ModificaFattura() {
                             <option value="bonifico_anticipato">Bonifico bancario anticipato</option>
                             <option value="bonifico_30gg">Bonifico bancario 30 gg data fattura</option>
                             <option value="bonifico_60gg">Bonifico bancario 60 gg data fattura</option>
-                            <option value="contrassegno">Pagamento in contrassegno</option>
-                            <option value="rateale">Pagamento rateale</option>
                             <option value="riba">Ricevuta bancaria (Ri.Ba.)</option>
                         </select>
 
