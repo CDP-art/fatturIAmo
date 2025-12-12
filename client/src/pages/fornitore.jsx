@@ -27,7 +27,7 @@ export default function Fornitore() {
         email: "",
         telefono: "",
         logoDataUrl: "",
-        iban: "", // IBAN unico dell'azienda
+        iban: "",
     }
 
 
@@ -133,7 +133,7 @@ export default function Fornitore() {
             showCancelButton: true,
             confirmButtonText: "✅ Continua",
             cancelButtonText: "↩️ Annulla",
-            reverseButtons: true, // per mettere "Continua" a destra
+            reverseButtons: true,
             customClass: {
                 popup: "rounded-2xl shadow-xl bg-white max-w-lg w-[90%] sm:w-[400px]",
                 title: "text-gray-800 font-bold text-lg",

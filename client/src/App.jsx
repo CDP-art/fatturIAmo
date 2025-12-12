@@ -2,7 +2,6 @@ import React, { lazy, Suspense, useState } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AnalyticsTracker } from "./AnalyticsTracker";
 
-//import { useState } from "react";
 const Home = lazy(() => import("./pages/home"));
 const Demo = lazy(() => import("./pages/demo"));
 const Genera = lazy(() => import("./pages/genera"));
