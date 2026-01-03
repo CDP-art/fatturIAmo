@@ -65,7 +65,8 @@ export default function Privacy() {
                             intelligenza artificiale (<strong>Gemini AI di Google</strong>).
                             Non vengono conservati sui nostri server oltre il tempo necessario
                             alla generazione della fattura. Alcuni servizi terzi trattano dati
-                            tecnici (IP, user agent).
+                            tecnici (IP, user agent).<br></br>
+                            Il trattamento si basa sull’esecuzione del servizio richiesto dall’utente e sul legittimo interesse del titolare alla sicurezza e al miglioramento dell’applicazione.
                         </p>
 
                         <h2 className="text-xl font-semibold text-gray-800">
@@ -85,15 +86,18 @@ export default function Privacy() {
                                 automatizzati
                             </li>
                         </ul>
+
+                        I dati possono essere trattati da Google anche al di fuori dell’Unione Europea, nel rispetto delle garanzie previste dal GDPR (es. Clausole Contrattuali Standard).
+
                         <p>
-                            Maggiori dettagli su{" "}
+                            Maggiori dettagli sono disponibili nella{" "}
                             <a
                                 href="https://policies.google.com/privacy"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-blue-600 hover:underline"
                             >
-                                Google Privacy Policy
+                                Privacy Policy di Google
                             </a>
                             .
                         </p>

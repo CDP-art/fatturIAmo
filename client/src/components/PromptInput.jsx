@@ -2,6 +2,31 @@ import React, { useState } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
 
+// reCAPTCHA v3 (site key in .env frontend: VITE_RECAPTCHA_SITE_KEY)
+const RECAPTCHA_SITE_KEY = import.meta.env?.VITE_RECAPTCHA_SITE_KEY;
+const RECAPTCHA_ACTION = "genera_fattura";
+
+async function getRecaptchaToken() {
+    // In dev you might not load the reCAPTCHA script; keep behavior explicit.
+    if (!RECAPTCHA_SITE_KEY) {
+        throw new Error("reCAPTCHA: manca VITE_RECAPTCHA_SITE_KEY nel frontend");
+    }
+
+    const grecaptcha = window.grecaptcha;
+    if (!grecaptcha || typeof grecaptcha.ready !== "function" || typeof grecaptcha.execute !== "function") {
+        throw new Error("reCAPTCHA non disponibile: assicurati di aver caricato lo script nel <head>");
+    }
+
+    return await new Promise((resolve, reject) => {
+        grecaptcha.ready(() => {
+            grecaptcha
+                .execute(RECAPTCHA_SITE_KEY, { action: RECAPTCHA_ACTION })
+                .then(resolve)
+                .catch(reject);
+        });
+    });
+}
+
 function safeGetLS(key) {
     try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : null; }
     catch { return null; }
@@ -97,9 +122,12 @@ export default function PromptInput({ onGenerated }) {
                     ? "https://fatturiamo-backend.onrender.com"
                     : "http://localhost:8000");
 
+            // 0) reCAPTCHA token (v3) -> lo inviamo al backend
+            const recaptchaToken = await getRecaptchaToken();
+
             const { data } = await axios.post(
                 `${baseURL}/genera`,
-                { prompt: text, supplier },
+                { prompt: text, supplier, recaptchaToken },
                 { timeout: 15000 }
             );
             if (!data || data.ok !== true || !data.data) {

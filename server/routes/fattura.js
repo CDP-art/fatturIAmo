@@ -7,14 +7,72 @@ import { enforceTotals, normalizzaFattura, round2, coerceNumber } from "../utils
  * Come coerceNumber, ma con fallback a 0 (utile per prezzi riga).
  * Così, se non riesco a leggere il numero, metto 0 e non rompo i calcoli.
  */
+
 function parsePrezzo(val) {
     const n = coerceNumber(val);
     return n == null ? 0 : n;
 }
 
+/**
+ * Verifica token reCAPTCHA
+ * Ritorna { ok, success, score, action, errors }.
+ */
+async function verifyRecaptcha(token, expectedAction) {
+    if (!token) {
+        return { ok: false, success: false, score: 0, action: "", errors: ["missing-token"] };
+    }
+
+    const secret = process.env.RECAPTCHA_SECRET_KEY;
+    if (!secret) {
+        return { ok: false, success: false, score: 0, action: "", errors: ["missing-secret"] };
+    }
+
+    const params = new URLSearchParams();
+    params.append("secret", secret);
+    params.append("response", token);
+
+    const r = await axios.post(
+        "https://www.google.com/recaptcha/api/siteverify",
+        params,
+        {
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            timeout: 8000,
+        }
+    );
+
+    const data = r.data || {};
+    const success = Boolean(data.success);
+    const score = Number(data.score ?? 0); // v2 non fornisce score -> resta 0
+    const action = String(data.action ?? "");
+    const errors = data["error-codes"] || [];
+
+    // v3: controlla anche action + score. v2: basta success === true.
+    const MIN_SCORE = 0.5;
+    const isV3 = typeof data.score !== "undefined";
+
+    const actionOk = expectedAction ? action === expectedAction : true;
+
+    const ok = isV3 ? (success && actionOk && score >= MIN_SCORE) : success;
+
+    return { ok, success, score, action, errors };
+}
+
 export async function generaFattura(req, res) {
     try {
-        const { prompt: promptOriginale, supplier } = req.body;
+        const { prompt: promptOriginale, supplier, recaptchaToken } = req.body;
+
+        // 🔐 VERIFICA reCAPTCHA (USA LA SECRET KEY DAL .env)
+        const check = await verifyRecaptcha(recaptchaToken, "genera_fattura");
+        if (!check.ok) {
+            return res.status(403).json({
+                ok: false,
+                error: "RECAPTCHA_FAILED",
+                // dettagli solo in dev
+                ...(process.env.NODE_ENV !== "production"
+                    ? { debug: { success: check.success, score: check.score, action: check.action, errors: check.errors } }
+                    : {}),
+            });
+        }
 
         // 1) Estrazione veloce di flag/valori (es. ivaInclusa, importoTotale, ecc.)
         const parziali = (await estraiDatiParziali(promptOriginale)) || {};
