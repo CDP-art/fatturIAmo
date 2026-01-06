@@ -19,6 +19,7 @@ function safeGetLS(key, def = null) {
 export default function EsportaFatturaPDF() {
     const navigate = useNavigate();
     const location = useLocation();
+    const EXPORT_DELAY_MS = 2500;
     const invoiceFromState = location.state?.invoice || null;
     const invoiceFromLS = useMemo(() => safeGetLS("fatturiamo.draft", null), []);
     const invoice = invoiceFromState || invoiceFromLS;
@@ -35,7 +36,7 @@ export default function EsportaFatturaPDF() {
                 Swal.fire({
                     icon: "error",
                     title: "Fattura mancante",
-                    text: "Nessuna fattura trovata per generare l'XML.",
+                    text: "Nessuna fattura trovata per generare il PDF.",
                 });
                 return;
             }
@@ -46,7 +47,7 @@ export default function EsportaFatturaPDF() {
                 title: "PDF generato!",
                 text: "La tua fattura è stata scaricata correttamente.",
                 showConfirmButton: false,
-                timer: delay,
+                timer: EXPORT_DELAY_MS,
                 customClass: {
                     popup: "rounded-2xl shadow-xl bg-white",
                     title: "text-green-600 font-bold text-lg",
@@ -55,7 +56,7 @@ export default function EsportaFatturaPDF() {
 
             setTimeout(() => {
                 navigate("/endpage");
-            }, 2500);
+            }, EXPORT_DELAY_MS);
 
         } catch (e) {
             console.error(e);
@@ -92,7 +93,7 @@ export default function EsportaFatturaPDF() {
                 title: "XML generato!",
                 text: "La tua fattura è stata scaricata correttamente.",
                 showConfirmButton: false,
-                timer: delay,
+                timer: EXPORT_DELAY_MS,
                 customClass: {
                     popup: "rounded-2xl shadow-xl bg-white",
                     title: "text-green-600 font-bold text-lg",
@@ -101,7 +102,7 @@ export default function EsportaFatturaPDF() {
 
             setTimeout(() => {
                 navigate("/endpage");
-            }, 2500);
+            }, EXPORT_DELAY_MS);
 
         } catch (e) {
             Swal.fire({

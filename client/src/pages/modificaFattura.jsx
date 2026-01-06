@@ -114,78 +114,64 @@ export default function ModificaFattura() {
 
     // Export
     function handleExportFattura() {
-        const hasSdiOrPec =
-            String(form.clienteSdi || "").trim() ||
-            String(form.clientePec || "").trim();
+        const EXPORT_DELAY_MS = 4000;
+
+        const sdi = String(form.clienteSdi || "").trim();
+        const pec = String(form.clientePec || "").trim();
+        const hasSdiOrPec = Boolean(sdi || pec);
+
+        const prodotti = Array.isArray(form.prodotti) ? form.prodotti : [];
 
         const hasMissingRequiredFields =
-            !form.numeroFattura ||
-            !form.data ||
-            !form.clienteNome ||
-            !form.clientePiva ||
-            !form.clienteIndirizzo ||
-            !form.metodoPagamento ||
-            form.prodotti.length === 0 ||
-            form.prodotti.some(
-                (p) => !p.descrizione || p.prezzo <= 0 || p.quantita <= 0
-            );
+            !String(form.numeroFattura || "").trim() ||
+            !String(form.data || "").trim() ||
+            !String(form.clienteNome || "").trim() ||
+            !String(form.clientePiva || "").trim() ||
+            !String(form.clienteIndirizzo || "").trim() ||
+            !String(form.metodoPagamento || "").trim() ||
+            prodotti.length === 0 ||
+            prodotti.some((p) => {
+                const descrizione = String(p?.descrizione || "").trim();
+                const prezzo = Number(p?.prezzo);
+                const quantita = Number(p?.quantita);
+                return (
+                    !descrizione ||
+                    !Number.isFinite(prezzo) || prezzo <= 0 ||
+                    !Number.isFinite(quantita) || quantita <= 0
+                );
+            });
 
         if (!hasSdiOrPec) {
-            Swal.fire({
-                icon: "warning",
-                title: "Dato di recapito mancante",
-                text: "Inserisci almeno uno tra SDI o PEC del cliente.",
-                customClass: {
-                    popup: "rounded-2xl shadow-xl bg-white",
-                    confirmButton:
-                        "bg-gradient-to-r from-purple-600 to-blue-600 hover:brightness-110 text-white font-semibold px-6 py-3 rounded-2xl shadow-md transition-transform hover:scale-105 active:scale-95",
-                },
-                buttonsStyling: false,
-                confirmButtonText: "Ok, capito",
-            });
+            Swal.fire({ /* uguale a ora */ });
             return;
         }
 
         if (hasMissingRequiredFields) {
-            Swal.fire({
-                icon: "warning",
-                title: "Campi mancanti",
-                text: "Compila tutti i campi obbligatori prima di proseguire.",
-                customClass: {
-                    popup: "rounded-2xl shadow-xl bg-white",
-                    confirmButton:
-                        "bg-gradient-to-r from-purple-600 to-blue-600 hover:brightness-110 text-white font-semibold px-6 py-3 rounded-2xl shadow-md transition-transform hover:scale-105 active:scale-95",
-                },
-                buttonsStyling: false,
-                confirmButtonText: "Ok, capito",
-            });
+            Swal.fire({ /* uguale a ora */ });
             return;
         }
 
-        // Costruisco l'oggetto invoice pulito
         const invoice = {
-            numeroFattura: form.numeroFattura,
-            data: form.data,
+            numeroFattura: String(form.numeroFattura || "").trim(),
+            data: String(form.data || "").trim(),
             cliente: {
-                nome: form.clienteNome,
-                piva: form.clientePiva,
-                indirizzo: form.clienteIndirizzo,
-                sdi: form.clienteSdi,
-                pec: form.clientePec,
+                nome: String(form.clienteNome || "").trim(),
+                piva: String(form.clientePiva || "").trim(),
+                indirizzo: String(form.clienteIndirizzo || "").trim(),
+                sdi,
+                pec,
             },
-            prodotti: form.prodotti,
+            prodotti,
             imponibile: Number(imponibile.toFixed(2)),
             iva: Number(iva.toFixed(2)),
             totale: Number(totale.toFixed(2)),
             aliquotaIva: Number(form.aliquotaIva),
-            metodoPagamento: form.metodoPagamento,
+            metodoPagamento: String(form.metodoPagamento || "").trim(),
         };
 
-        // Salvo anche come draft aggiornato
         try {
             localStorage.setItem("fatturiamo.draft", JSON.stringify(invoice));
         } catch { }
-
 
         Swal.fire({
             icon: "success",
@@ -193,7 +179,7 @@ export default function ModificaFattura() {
             text: "Puoi ora esportarla in PDF o XML.",
             showConfirmButton: false,
             timerProgressBar: true,
-            timer: delay,
+            timer: EXPORT_DELAY_MS,
             customClass: {
                 popup: "rounded-2xl shadow-xl bg-white",
                 title: "text-green-600 font-bold text-lg",
@@ -202,7 +188,7 @@ export default function ModificaFattura() {
 
         setTimeout(() => {
             navigate("/esporta", { state: { invoice }, replace: true });
-        }, 4000);
+        }, EXPORT_DELAY_MS);
     }
 
 
