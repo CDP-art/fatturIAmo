@@ -142,12 +142,34 @@ export default function ModificaFattura() {
             });
 
         if (!hasSdiOrPec) {
-            Swal.fire({ /* uguale a ora */ });
+            Swal.fire({
+                icon: "warning",
+                title: "Dato di recapito mancante",
+                text: "Inserisci almeno uno tra SDI o PEC del cliente.",
+                customClass: {
+                    popup: "rounded-2xl shadow-xl bg-white",
+                    confirmButton:
+                        "bg-gradient-to-r from-purple-600 to-blue-600 hover:brightness-110 text-white font-semibold px-6 py-3 rounded-2xl shadow-md transition-transform hover:scale-105 active:scale-95",
+                },
+                buttonsStyling: false,
+                confirmButtonText: "Ok, capito",
+            });
             return;
         }
 
         if (hasMissingRequiredFields) {
-            Swal.fire({ /* uguale a ora */ });
+            Swal.fire({
+                icon: "warning",
+                title: "Campi mancanti",
+                text: "Compila tutti i campi obbligatori prima di proseguire.",
+                customClass: {
+                    popup: "rounded-2xl shadow-xl bg-white",
+                    confirmButton:
+                        "bg-gradient-to-r from-purple-600 to-blue-600 hover:brightness-110 text-white font-semibold px-6 py-3 rounded-2xl shadow-md transition-transform hover:scale-105 active:scale-95",
+                },
+                buttonsStyling: false,
+                confirmButtonText: "Ok, capito",
+            });
             return;
         }
 
