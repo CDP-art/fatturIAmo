@@ -47,6 +47,8 @@ export default function ModificaFattura() {
     const invoiceFromState = location.state?.invoice || null;
     const draftFromLS = useMemo(() => safeGetLS("fatturiamo.draft", null), []);
     const invoiceData = invoiceFromState || draftFromLS;
+    const [form, setForm] = useState(() => buildInitialForm(invoiceData || {}));
+
 
     // Se non ho nulla, reindirizzo
     useEffect(() => {
@@ -56,9 +58,6 @@ export default function ModificaFattura() {
     }, [invoiceData, navigate]);
 
     if (!invoiceData) return null;
-
-    // Stato form (tutti stringhe o numeri “safe”)
-    const [form, setForm] = useState(() => buildInitialForm(invoiceData));
 
     // Handlers semplici
     const setField = (key) => (e) => {
@@ -304,7 +303,7 @@ export default function ModificaFattura() {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-1">P.IVA</label>
+                            <label className="block text-sm font-medium text-gray-600 mb-1">P.IVA o C.F</label>
                             <input
                                 type="text"
                                 value={form.clientePiva || ""}
