@@ -80,7 +80,7 @@ export async function generaFattura(req, res) {
         // 2) Prompt strutturato per ottenere la bozza JSON della fattura
         const prompt = generaPromptFattura(parziali, promptOriginale, supplier);
 
-        const GEMINI_MODEL = "gemini-2.5-flash";
+        const GEMINI_MODEL = "gemini-3.5-flash";
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${process.env.GEMINI_API_KEY}`;
 
         const payload = {
