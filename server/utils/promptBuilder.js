@@ -15,7 +15,8 @@ export async function estraiDatiParziali(promptUtente) {
   }
 
   // 2) Costruisco la URL in modo sicuro
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(
+  const GEMINI_MODEL = "gemini-3.5-flash";
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(
     key
   )}`;
 
@@ -86,62 +87,81 @@ REGOLE:
 - Se mancano dati di cliente / fornitore, usa nomi e indirizzi plausibili.
 - Usa UNA SOLA riga se l'utente non specifica più voci.
 - NON calcolare totali o IVA.Il server si occupa dei calcoli.
-- Usa numeri veri(non stringhe) e la virgola per i decimali e il punto per le migliaia.
+- Restituisci JSON valido al 100%.
+- Usa numeri JSON validi: il separatore decimale deve essere il punto.
+- Non usare virgole nei numeri.
+- Non usare separatori delle migliaia.
+- Esempi corretti: 10, 20.5, 150, 1234.56.
+- Esempi sbagliati: 20,5 oppure 1.234,56 oppure "20 euro".
+- I prezzi devono essere number, non stringhe.
 - Usa formato data DD / MM / YYYY se presente, altrimenti ometti il campo.
 - Se un campo è sconosciuto, NON includerlo nel JSON(non usare null o 0).
 - Restituisci SOLO i campi utili secondo lo schema seguente.
 
-SCHEMA RICHIESTO:
+ESEMPIO DI STRUTTURA JSON VALIDA:
+{
+  "numeroFattura": "F-001",
+  "data": "06/07/2026",
+  "cliente": {
+    "ragioneSociale": "Nome cliente",
+    "piva": "12345678901",
+    "indirizzo": "Via esempio 1"
+  },
+  "fornitore": {
+    "ragioneSociale": ${JSON.stringify(sup.ragioneSociale || "")},
+    "piva": ${JSON.stringify(sup.piva || "")},
+    "indirizzo": ${JSON.stringify(sup.indirizzo || "")}
+  },
+  "righe": [
     {
-      "numeroFattura": string ?,
-        "data": string ?,
-          "cliente": {
-        "ragioneSociale": string,
-          "piva": string ?,
-            "indirizzo": string ?
-  },
-      "fornitore": {
-        "ragioneSociale": ${JSON.stringify(sup.ragioneSociale)},
-        "piva": ${JSON.stringify(sup.piva)},
-        "indirizzo": ${JSON.stringify(sup.indirizzo)}
-      },
-      "righe": [
-        {
-          "descrizione": string,
-          "ore": number,
-          "tariffaOraria": number,
-          "scontoPct": number ?
+      "descrizione": "Descrizione servizio",
+      "ore": 1,
+      "tariffaOraria": 100
     }
-      ],
-        "opzioni": {
-        "aliquotaIvaPct": number,
-          "prezziIvaInclusa": boolean ?
+  ],
+  "opzioni": {
+    "aliquotaIvaPct": 22,
+    "prezziIvaInclusa": false
   },
-      "vincoli": {
-        "totaleLordo": number ?
+  "vincoli": {
+    "totaleLordo": 122
   },
-      "note": string ?
+  "note": "Eventuali note"
 }
 
-    ISTRUZIONI:
-    - Ogni riga DEVE avere sia "ore" che "tariffaOraria".Se uno dei due manca, deducilo o imposta "ore": 1.
-    - Non mettere ore = 0 o tariffaOraria = 0, a meno che sia chiaramente gratuito.
-    - Se l'importo è espresso come "500 euro", e non è chiaro quante ore, metti "ore": 1, "tariffaOraria": 500.
-    - Se l’utente usa “quantità + prezzo”, converti in “ore + tariffaOraria”.
-    - Non includere righe incomplete: tutte le righe devono poter essere moltiplicate(ore × tariffa).
-    - Se l’utente specifica importi(es. 500 euro), questi devono essere usati esattamente come "tariffaOraria" o "prezzo".
-    - NON ignorare nessun prezzo presente nel testo.
+IMPORTANTE:
+- L'esempio serve solo come struttura.
+- Non copiare valori inventati se non sono presenti.
+- Se un campo non è noto, omettilo.
+- Non usare null.
+- Non usare undefined.
+- Non usare commenti.
+- Non usare blocchi markdown di codice.
+- Non aggiungere testo prima o dopo il JSON.
+- Le chiavi devono essere sempre tra doppi apici.
+- Le stringhe devono essere sempre tra doppi apici.
+- I numeri devono essere numeri JSON validi.
 
-      ESEMPI:
-    - "posa piastrelle 20 euro/h per 8 ore" -> { descrizione: "posa piastrelle", ore: 8, tariffaOraria: 20 }
-    - "piastrelle 20 euro/mq per 45 mq" -> { descrizione: "piastrelle", ore: 45, tariffaOraria: 20 }
-    - "manodopera 500 euro" -> { descrizione: "manodopera", ore: 1, tariffaOraria: 500 }
+ISTRUZIONI:
+- Ogni riga DEVE avere sia "ore" che "tariffaOraria". Se uno dei due manca, deducilo o imposta "ore": 1.
+- Non mettere ore = 0 o tariffaOraria = 0, a meno che sia chiaramente gratuito.
+- Se l'importo è espresso come "500 euro", e non è chiaro quante ore, metti "ore": 1, "tariffaOraria": 500.
+- Se l’utente usa “quantità + prezzo”, converti in “ore + tariffaOraria”.
+- Non includere righe incomplete: tutte le righe devono poter essere moltiplicate.
+- Se l’utente specifica importi, questi devono essere usati esattamente come "tariffaOraria".
+- NON ignorare nessun prezzo presente nel testo.
+
+ESEMPI:
+- "posa piastrelle 20 euro/h per 8 ore" -> { "descrizione": "posa piastrelle", "ore": 8, "tariffaOraria": 20 }
+- "piastrelle 20 euro/mq per 45 mq" -> { "descrizione": "piastrelle", "ore": 45, "tariffaOraria": 20 }
+- "manodopera 500 euro" -> { "descrizione": "manodopera", "ore": 1, "tariffaOraria": 500 }
 
 REGOLE IVA:
-    - Se l’utente specifica un importo con "IVA inclusa"(es. "totale 1500 euro IVA inclusa" o "100 iva inclusa"), metti SEMPRE "vincoli": { "totaleLordo": <importo> }.
-    - Se l’utente dichiara che "tutti i prezzi sono IVA inclusa" (es. "tutto IVA inclusa", "prezzi IVA inclusa"), aggiungi anche: "opzioni": {"prezziIvaInclusa": true }.
-    - Se l’utente specifica "totale 1500 euro IVA esclusa", ometti "vincoli.totaleLordo" (il server calcola l’IVA).
-    - Se l’utente specifica "aliquota IVA 10%", usa questo valore in "opzioni.aliquotaIvaPct".
+- Se l’utente specifica un importo con "IVA inclusa", inserisci il numero indicato in "vincoli.totaleLordo".
+- Esempio: "totale 1500 euro IVA inclusa" -> { "vincoli": { "totaleLordo": 1500 } }
+- Se l’utente dichiara che "tutti i prezzi sono IVA inclusa", aggiungi "opzioni": { "prezziIvaInclusa": true }.
+- Se l’utente specifica "totale 1500 euro IVA esclusa", ometti "vincoli.totaleLordo".
+- Se l’utente specifica "aliquota IVA 10%", usa "opzioni": { "aliquotaIvaPct": 10 }.
 
           ---
           Dati parziali estratti:

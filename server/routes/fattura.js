@@ -57,6 +57,19 @@ async function verifyRecaptcha(token, expectedAction) {
     return { ok, success, score, action, errors };
 }
 
+function extractJsonObject(raw) {
+    const text = String(raw || "").trim();
+
+    const first = text.indexOf("{");
+    const last = text.lastIndexOf("}");
+
+    if (first === -1 || last === -1 || last <= first) {
+        return "{}";
+    }
+
+    return text.slice(first, last + 1);
+}
+
 export async function generaFattura(req, res) {
     try {
         const { prompt: promptOriginale, supplier, recaptchaToken } = req.body;
@@ -88,7 +101,7 @@ export async function generaFattura(req, res) {
             generationConfig: {
                 response_mime_type: "application/json",
                 temperature: 0.1,
-                maxOutputTokens: 800,
+                maxOutputTokens: 2000,
             },
         };
 
@@ -100,12 +113,8 @@ export async function generaFattura(req, res) {
         });
 
         // 4) Parsing sicuro del JSON (tento di prendere solo il blocco {})
-        let raw = g.data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-        let jsonText = String(raw || "").trim();
-        if (!jsonText.startsWith("{")) {
-            const m = jsonText.match(/\{[\s\S]*\}/);
-            jsonText = m ? m[0] : "{}";
-        }
+        const raw = g.data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+        const jsonText = extractJsonObject(raw);
 
         let draft;
         try {
@@ -193,8 +202,18 @@ export async function generaFattura(req, res) {
         if (process.env.NODE_ENV !== 'production') {
             console.error("GENERA:", err?.response?.data || err);
         }
-        return res
-            .status(502)
-            .json({ ok: false, error: code });
+        const httpStatus =
+            status === 429
+                ? 429
+                : status === 503
+                    ? 503
+                    : err?.code === "ETIMEDOUT"
+                        ? 504
+                        : 502;
+
+        return res.status(httpStatus).json({
+            ok: false,
+            error: code,
+        });
     }
 }
