@@ -31,8 +31,13 @@ function buildInitialForm(invoice) {
         clienteIndirizzo: cliente.indirizzo || "",
         prodotti: prodotti.map((p) => ({
             descrizione: p?.descrizione || "",
-            quantita: Number(p?.quantita ?? p?.ore ?? 1),
-            prezzo: Number(p?.prezzo ?? p?.tariffa ?? 0),
+            quantita: String(p?.quantita ?? p?.ore ?? 1),
+            prezzo:
+                p?.prezzo != null
+                    ? String(p.prezzo)
+                    : p?.tariffa != null
+                        ? String(p.tariffa)
+                        : "",
         })),
         aliquotaIva: Number(inv.aliquotaIva ?? 22),
         metodoPagamento: inv.metodoPagamento || "",
@@ -71,11 +76,7 @@ export default function ModificaFattura() {
             const next = { ...prev, prodotti: [...prev.prodotti] };
             const row = { ...next.prodotti[index] };
 
-            if (campo === "quantita" || campo === "prezzo") {
-                row[campo] = Number(valore);
-            } else {
-                row[campo] = valore;
-            }
+            row[campo] = valore;
 
             next.prodotti[index] = row;
             return next;
@@ -85,7 +86,7 @@ export default function ModificaFattura() {
     function aggiungiProdotto() {
         setForm((prev) => ({
             ...prev,
-            prodotti: [...prev.prodotti, { descrizione: "", quantita: 1, prezzo: 0 }],
+            prodotti: [...prev.prodotti, { descrizione: "", quantita: "1", prezzo: "" }],
         }));
     }
 
@@ -172,6 +173,12 @@ export default function ModificaFattura() {
             return;
         }
 
+        const prodottiNormalizzati = prodotti.map((p) => ({
+            descrizione: String(p.descrizione || "").trim(),
+            quantita: Number(p.quantita || 0),
+            prezzo: Number(p.prezzo || 0),
+        }));
+
         const invoice = {
             numeroFattura: String(form.numeroFattura || "").trim(),
             data: String(form.data || "").trim(),
@@ -182,14 +189,13 @@ export default function ModificaFattura() {
                 sdi,
                 pec,
             },
-            prodotti,
+            prodotti: prodottiNormalizzati,
             imponibile: Number(imponibile.toFixed(2)),
             iva: Number(iva.toFixed(2)),
             totale: Number(totale.toFixed(2)),
             aliquotaIva: Number(form.aliquotaIva),
             metodoPagamento: String(form.metodoPagamento || "").trim(),
         };
-
         try {
             localStorage.setItem("fatturiamo.draft", JSON.stringify(invoice));
         } catch { }
@@ -272,6 +278,7 @@ export default function ModificaFattura() {
                             <label className="block text-sm font-medium text-gray-600 mb-1">Numero Fattura</label>
                             <input
                                 type="text"
+                                placeholder="Es. FATT-2023-001"
                                 value={form.numeroFattura || ""}
                                 onChange={setField("numeroFattura")}
                                 className="w-full border border-gray-300 rounded-xl px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -297,6 +304,7 @@ export default function ModificaFattura() {
                             <label className="block text-sm font-medium text-gray-600 mb-1">Nome e Cognome</label>
                             <input
                                 type="text"
+                                placeholder="Mario Rossi"
                                 value={form.clienteNome || ""}
                                 onChange={setField("clienteNome")}
                                 className="w-full border border-gray-300 rounded-xl px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -306,6 +314,7 @@ export default function ModificaFattura() {
                             <label className="block text-sm font-medium text-gray-600 mb-1">P.IVA o C.F</label>
                             <input
                                 type="text"
+                                placeholder="IT12345678901 | RSSMRA85M01H501Z"
                                 value={form.clientePiva || ""}
                                 onChange={setField("clientePiva")}
                                 className="w-full border border-gray-300 rounded-xl px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -315,6 +324,7 @@ export default function ModificaFattura() {
                             <label className="block text-sm font-medium text-gray-600 mb-1">SDI</label>
                             <input
                                 type="text"
+                                placeholder="Es. ABC1234"
                                 value={form.clienteSdi || ""}
                                 onChange={setField("clienteSdi")}
                                 className="w-full border border-gray-300 rounded-xl px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -324,6 +334,7 @@ export default function ModificaFattura() {
                             <label className="block text-sm font-medium text-gray-600 mb-1">Pec</label>
                             <input
                                 type="text"
+                                placeholder="cliente@pec.it | cliente@gmail.com"
                                 value={form.clientePec || ""}
                                 onChange={setField("clientePec")}
                                 className="w-full border border-gray-300 rounded-xl px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -333,6 +344,7 @@ export default function ModificaFattura() {
                             <label className="block text-sm font-medium text-gray-600 mb-1">Indirizzo</label>
                             <input
                                 type="text"
+                                placeholder="Via Roma 1, 00100 Roma (RM)"
                                 value={form.clienteIndirizzo || ""}
                                 onChange={setField("clienteIndirizzo")}
                                 className="w-full border border-gray-300 rounded-xl px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -360,7 +372,8 @@ export default function ModificaFattura() {
                                             <label className="block text-sm font-medium text-gray-600 mb-1">Quantità</label>
                                             <input
                                                 type="number"
-                                                value={item.quantita}
+                                                placeholder="0"
+                                                value={item.quantita ?? ""}
                                                 onChange={(e) => updateProdotto(i, "quantita", e.target.value)}
                                                 className="w-full border border-gray-300 rounded-xl px-4 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                                             />
@@ -370,7 +383,8 @@ export default function ModificaFattura() {
                                             <input
                                                 type="number"
                                                 step="0.01"
-                                                value={item.prezzo}
+                                                placeholder="0.00"
+                                                value={item.prezzo ?? ""}
                                                 onChange={(e) => updateProdotto(i, "prezzo", e.target.value)}
                                                 className="w-full border border-gray-300 rounded-xl px-4 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                                             />
@@ -398,8 +412,15 @@ export default function ModificaFattura() {
                             </div>
                         ))}
                         {form.prodotti.length === 0 && (
-                            <div className="text-sm text-gray-600">
-                                Nessuna riga presente. Aggiungi un prodotto/servizio con il pulsante “+”.
+                            <div className="text-sm text-gray-600 flex items-center justify-between gap-4">
+                                <span>Nessuna riga presente.</span>
+
+                                <button
+                                    onClick={aggiungiProdotto}
+                                    className="text-purple-600 border border-purple-300 rounded-xl px-4 py-2 hover:bg-purple-100 transition"
+                                >
+                                    + Aggiungi riga
+                                </button>
                             </div>
                         )}
                     </div>
